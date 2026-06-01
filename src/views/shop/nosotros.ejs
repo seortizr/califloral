@@ -1,0 +1,64 @@
+<%- include("../partials/head", { title }) %>
+<%- include("../partials/nav") %>
+<main class="page-stack floral-home static-page">
+  <section class="static-hero">
+    <div class="static-hero-inner">
+      <h1><%= page.heroTitle %></h1>
+      <p class="lead"><%= page.heroSubtitle %></p>
+      <% if (page.intro) { %>
+      <p class="intro-line"><%= page.intro %></p>
+      <% } %>
+    </div>
+  </section>
+
+  <div class="shell" style="margin-top: 0.5rem;">
+    <% if (page.highlights && page.highlights.length) { %>
+    <div class="about-highlights">
+      <% page.highlights.forEach((h) => { %>
+      <article class="about-highlight-card">
+        <div class="hi-ic"><i class="<%= h.icon || 'fa-solid fa-sparkles' %>"></i></div>
+        <h3><%= h.title %></h3>
+        <p><%= h.text %></p>
+      </article>
+      <% }); %>
+    </div>
+    <% } %>
+
+    <% if (page.blocks && page.blocks.length) { %>
+    <div class="about-story">
+      <% page.blocks.forEach((b) => { %>
+      <article class="about-story-block">
+        <h2><%= b.title %></h2>
+        <% String(b.body || "").split("\n").filter((line) => line.trim()).forEach((line) => { %>
+        <p><%= line.trim() %></p>
+        <% }); %>
+      </article>
+      <% }); %>
+    </div>
+    <% } %>
+
+    <% if (page.ctaText && page.ctaHref) { %>
+    <div class="static-cta">
+      <p><%= page.ctaText %></p>
+      <a href="<%= page.ctaHref %>"><i class="fa-solid fa-paper-plane"></i> <%= page.ctaButton || "Contacto" %></a>
+    </div>
+    <% } %>
+  </div>
+
+  <section class="shell trust-strip" style="margin-top: 1.5rem;">
+    <article><strong><i class="fa-solid fa-truck-fast"></i> Envios rapidos</strong><span>El mismo dia en Cali</span></article>
+    <article><strong><i class="fa-solid fa-leaf"></i> Flores frescas</strong><span>Calidad garantizada</span></article>
+    <article><strong><i class="fa-regular fa-heart"></i> Disenos unicos</strong><span>Hechos con amor</span></article>
+    <article><strong><i class="fa-solid fa-lock"></i> Pago seguro</strong><span>Tus compras protegidas</span></article>
+  </section>
+</main>
+<a
+  class="whatsapp-float"
+  href="https://wa.me/573222530652"
+  target="_blank"
+  rel="noopener noreferrer"
+  aria-label="Contactar por WhatsApp"
+>
+  <i class="fa-brands fa-whatsapp"></i>
+</a>
+<%- include("../partials/footer") %>

@@ -1,0 +1,125 @@
+<div class="cart-drawer-overlay" id="cart-drawer-overlay" hidden></div>
+<section class="cart-panel cart-drawer" id="cart-panel" aria-hidden="true">
+  <div class="cart-drawer-head">
+    <h2>Tu carrito</h2>
+    <button type="button" class="cart-drawer-close js-cart-drawer-close" aria-label="Cerrar carrito">x</button>
+  </div>
+
+  <% const items = (cartData && Array.isArray(cartData.cartItems)) ? cartData.cartItems : []; %>
+  <% if (!items.length) { %>
+  <p class="empty">Tu carrito esta vacio. Agrega productos para empezar.</p>
+  <% } else { %>
+  <script type="application/json" id="shipping-options-json"><%- JSON.stringify(typeof shippingOptions !== "undefined" ? shippingOptions : []) %></script>
+
+  <div class="cart-items">
+    <% items.forEach((item) => { %>
+    <article class="cart-item">
+      <div>
+        <strong><%= item.Product.name %></strong>
+        <span>$<%= Number(item.Product.price).toLocaleString("es-CO") %> x <%= item.quantity %></span>
+      </div>
+      <div class="qty-controls">
+        <form method="POST" action="/cart/update">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <% if (!cartData.isGuest) { %>
+          <input type="hidden" name="itemId" value="<%= item.id %>" />
+          <% } %>
+          <input type="hidden" name="productId" value="<%= item.Product.id %>" />
+          <input type="hidden" name="action" value="decrease" />
+          <button type="submit">-</button>
+        </form>
+        <form method="POST" action="/cart/update">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <% if (!cartData.isGuest) { %>
+          <input type="hidden" name="itemId" value="<%= item.id %>" />
+          <% } %>
+          <input type="hidden" name="productId" value="<%= item.Product.id %>" />
+          <input type="hidden" name="action" value="increase" />
+          <button type="submit">+</button>
+        </form>
+      </div>
+    </article>
+    <% }) %>
+  </div>
+
+  <div
+    class="cart-summary"
+    id="cart-summary-live"
+    data-subtotal="<%= Number(cartData.subtotalRaw || 0) %>"
+  >
+    <p><span>Subtotal</span><strong>$<%= Number(cartData.subtotal).toLocaleString("es-CO") %></strong></p>
+    <p><span>Envio</span><strong>$<span data-line-shipping><%= Number(cartData.shipping).toLocaleString("es-CO") %></span></strong></p>
+    <p class="total"><span>Total</span><strong>$<span data-line-total><%= Number(cartData.total).toLocaleString("es-CO") %></span></strong></p>
+  </div>
+
+  <% if (!cartData.isGuest) { %>
+  <form method="POST" action="/checkout" class="stack-form" id="checkout-cart-form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+    <fieldset class="fulfillment-fieldset">
+      <legend class="fulfillment-legend">Entrega</legend>
+      <label class="inline-radio">
+        <input
+          type="radio"
+          name="fulfillment"
+          value="delivery"
+          <%= cartData.fulfillment !== "pickup" ? "checked" : "" %>
+        />
+        Envio a domicilio
+      </label>
+      <label class="inline-radio">
+        <input type="radio" name="fulfillment" value="pickup" <%= cartData.fulfillment === "pickup" ? "checked" : "" %> />
+        Recoger en sitio (sin costo de envio)
+      </label>
+    </fieldset>
+
+    <div id="delivery-zone-wrap" class="delivery-zone-wrap" <%= cartData.fulfillment === "pickup" ? "hidden" : "" %>>
+      <label>
+        Zona de entrega
+        <select name="deliveryZone" <%= cartData.fulfillment === "pickup" ? "" : "required" %>>
+          <% (typeof shippingOptions !== "undefined" ? shippingOptions : []).forEach((z) => { %>
+          <option value="<%= z.key %>" <%= cartData.deliveryZone === z.key ? "selected" : "" %>><%= z.label %> — $<%= Number(z.amount).toLocaleString("es-CO") %></option>
+          <% }); %>
+        </select>
+      </label>
+    </div>
+
+    <label>
+      <% if (cartData.fulfillment === "pickup") { %>
+      Notas (opcional)
+      <% } else { %>
+      Direccion de entrega
+      <% } %>
+      <input
+        type="text"
+        name="shippingAddress"
+        id="shipping-address-input"
+        placeholder="<%= cartData.fulfillment === 'pickup' ? 'Opcional: notas para tu pedido al recoger' : 'Ej: Calle 5 # 10-20, barrio, referencias' %>"
+        <%= cartData.fulfillment !== "pickup" ? "required" : "" %>
+      />
+    </label>
+
+    <label>
+      Metodo de pago
+      <select name="paymentMethod" required>
+        <option value="">Selecciona una opcion</option>
+        <% (typeof paymentOptions !== "undefined" ? paymentOptions : []).forEach((method) => { %>
+        <option value="<%= method.key %>"><%= method.label %></option>
+        <% }); %>
+      </select>
+    </label>
+    <button class="primary-btn" type="submit">Finalizar compra</button>
+  </form>
+  <% } else { %>
+  <div class="cart-guest-checkout">
+    <p class="helper-text">Para pagar debes iniciar sesion. Tu carrito se conserva.</p>
+    <div class="cart-guest-actions">
+      <a class="primary-btn primary-link full" href="/auth/login">Iniciar sesion</a>
+      <button type="button" class="ghost-btn full js-cart-drawer-close">Cancelar</button>
+    </div>
+  </div>
+  <% } %>
+  <% } %>
+</section>
+<script src="/js/cart-drawer.js"></script>
+<script src="/js/cart-shipping.js"></script>

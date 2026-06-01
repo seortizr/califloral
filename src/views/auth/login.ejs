@@ -1,0 +1,77 @@
+<%- include("../partials/head", { title }) %>
+<%- include("../partials/nav") %>
+<main class="auth-shell auth-login-page">
+  <section class="auth-login-layout">
+    <article class="auth-login-brand">
+      <p class="auth-kicker">Bienvenido a CaliFloral</p>
+      <h1>Inicia sesion y continua con tus pedidos</h1>
+      <p>
+        Ramos frescos, disenos especiales y entregas en Cali. Accede para comprar mas rapido y
+        ver tus pedidos en un solo lugar.
+      </p>
+      <ul class="auth-benefits">
+        <li><i class="fa-solid fa-truck-fast"></i> Entregas rapidas en Cali</li>
+        <li><i class="fa-solid fa-shield-heart"></i> Pago y datos protegidos</li>
+        <li><i class="fa-solid fa-gift"></i> Soporte para regalos especiales</li>
+      </ul>
+    </article>
+
+    <article class="auth-card auth-login-card">
+      <h2>Iniciar sesion</h2>
+      <% if (typeof guestCartPending !== "undefined" && guestCartPending) { %>
+      <p class="alert success">
+        Tienes productos en el carrito. Al iniciar sesion los conservamos y te devolvemos a la pagina donde estabas para
+        que puedas pagar.
+      </p>
+      <% } %>
+      <% if (error) { %>
+      <p class="alert error"><%= error %></p>
+      <% } %>
+      <form method="POST" action="/auth/login" class="stack-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <label>
+          Correo
+          <input
+            id="login-email"
+            type="email"
+            name="email"
+            placeholder="tucorreo@ejemplo.com"
+            autocomplete="username"
+            required
+          />
+        </label>
+        <label class="password-field-label">
+          Contrasena
+          <span class="password-field-wrap">
+            <input
+              id="login-password"
+              type="password"
+              name="password"
+              minlength="8"
+              placeholder="Tu contrasena"
+              autocomplete="current-password"
+              required
+            />
+            <button
+              type="button"
+              class="password-toggle-btn"
+              id="toggle-password-visibility"
+              aria-label="Mostrar contrasena"
+              aria-pressed="false"
+            >
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </span>
+        </label>
+        <label class="remember-user-row" for="remember-user">
+          <input id="remember-user" type="checkbox" />
+          Guardar usuario en este dispositivo
+        </label>
+        <button class="primary-btn auth-login-btn" type="submit">Ingresar</button>
+      </form>
+      <p class="helper-text">No tienes cuenta? <a href="/auth/register">Registrate aqui</a></p>
+    </article>
+  </section>
+</main>
+<script src="/js/auth-login.js"></script>
+<%- include("../partials/footer") %>

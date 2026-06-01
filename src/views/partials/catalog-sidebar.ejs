@@ -1,0 +1,24 @@
+<aside class="categories-panel">
+  <h2>Categorias</h2>
+  <div class="cat-divider"></div>
+  <div class="categories-grid">
+    <% const catForActive = (typeof category !== "undefined" && category) ? category : ((typeof currentCategory !== "undefined" && currentCategory) ? currentCategory : null); %>
+    <% const activeSlug = catForActive ? catForActive.slug : null; %>
+    <% const cats = typeof categories !== "undefined" && categories && categories.length ? categories : []; %>
+    <% if (cats.length) { %>
+      <% cats.forEach((cat) => { %>
+      <a
+        href="/categoria/<%= cat.slug %>"
+        class="category-item <%= activeSlug === cat.slug ? "is-active" : "" %>"
+      >
+        <span class="cat-ic"><i class="<%= cat.iconClass %>"></i></span><%= cat.name %>
+      </a>
+      <% }); %>
+    <% } else { %>
+      <a href="/categoria/ramos" class="category-item"><span class="cat-ic"><i class="fa-regular fa-hand-holding-heart"></i></span>Ramos</a>
+      <a href="/categoria/rosas" class="category-item"><span class="cat-ic"><i class="fa-solid fa-spa"></i></span>Rosas</a>
+      <a href="/categoria/regalos" class="category-item"><span class="cat-ic"><i class="fa-solid fa-gift"></i></span>Regalos</a>
+      <a href="/categoria/plantas" class="category-item"><span class="cat-ic"><i class="fa-solid fa-seedling"></i></span>Plantas</a>
+    <% } %>
+  </div>
+</aside>

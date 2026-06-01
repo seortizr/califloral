@@ -1,0 +1,60 @@
+{
+  "nosotros": {
+    "heroTitle": "CaliFloral",
+    "heroSubtitle": "Flores frescas, disenos con alma y entregas que emocionan en Cali.",
+    "intro": "Somos un equipo apasionado por convertir momentos cotidianos en recuerdos inolvidables. Cada ramo cuenta una historia: la tuya.",
+    "blocks": [
+      {
+        "title": "Nuestra historia",
+        "body": "Nacimos en Cali con la idea de acercar la belleza natural a cada hogar y negocio. Trabajamos con proveedores locales cuando es posible y seleccionamos cada flor con cuidado para que llegue fresca y radiante."
+      },
+      {
+        "title": "Lo que nos mueve",
+        "body": "Creemos en el detalle honesto: precios claros, tiempos de entrega realistas y un servicio cercano. Si tienes una idea especial, nos encanta hacerla realidad."
+      },
+      {
+        "title": "Compromiso",
+        "body": "Empaque cuidadoso, mensajes personalizados y seguimiento de tu pedido. Tu confianza es lo mas importante para nosotros."
+      }
+    ],
+    "highlights": [
+      {
+        "icon": "fa-solid fa-seedling",
+        "title": "Frescura",
+        "text": "Seleccion diaria y manejo refrigerado cuando aplica."
+      },
+      {
+        "icon": "fa-solid fa-palette",
+        "title": "Diseno",
+        "text": "Estilos romanticos, modernos y arreglos a medida."
+      },
+      {
+        "icon": "fa-solid fa-truck-fast",
+        "title": "Entregas",
+        "text": "Cobertura en Cali y asesoria para fecha y hora."
+      },
+      {
+        "icon": "fa-solid fa-heart",
+        "title": "Cercania",
+        "text": "Equipo humano que te escucha antes de armar tu pedido."
+      }
+    ],
+    "ctaText": "Quieres cotizar o tienes una fecha especial?",
+    "ctaButton": "Ir a contacto",
+    "ctaHref": "/contacto"
+  },
+  "contacto": {
+    "heroTitle": "Contacto",
+    "heroSubtitle": "Escríbenos, llamanos o visitanos. Estamos para ayudarte.",
+    "phoneDisplay": "+57 322 253 0652",
+    "phoneTel": "+573222530652",
+    "whatsapp": "573222530652",
+    "email": "hola@califloral.com",
+    "address": "Cali, Valle del Cauca — Colombia",
+    "hours": "Lunes a sabado: 8:00 a. m. – 7:00 p. m. · Domingo: con cita previa",
+    "mapEmbedUrl": "",
+    "lat": "3.451647",
+    "lng": "-76.531995",
+    "note": "Puedes pegar aqui una URL de Google Maps (Compartir > Insertar mapa) en mapEmbedUrl, o ajustar lat/lng."
+  }
+}

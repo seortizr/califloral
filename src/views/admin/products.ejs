@@ -1,0 +1,470 @@
+<%- include("../partials/head", { title }) %>
+<%- include("../partials/nav") %>
+<div
+  id="admin-runtime-config"
+  data-csrf-token="<%= encodeURIComponent(csrfToken) %>"
+  data-has-error="<%= error ? '1' : '0' %>"
+  hidden
+></div>
+<main class="orders-shell admin-products-page">
+  <div class="admin-toolbar">
+    <h2>Panel administrativo de productos</h2>
+    <div class="admin-toolbar-actions">
+      <a class="ghost-btn admin-add-btn" href="/admin/orders">Ver pedidos</a>
+      <button type="button" class="primary-btn admin-add-btn" id="open-create-product-modal">
+        <i class="fa-solid fa-plus"></i> Agregar producto
+      </button>
+      <button type="button" class="ghost-btn admin-add-btn" id="open-create-category-modal">
+        <i class="fa-solid fa-folder-plus"></i> Agregar categoria
+      </button>
+      <button type="button" class="ghost-btn admin-add-btn" id="open-manage-categories-modal">
+        <i class="fa-solid fa-layer-group"></i> Ver categorias
+      </button>
+    </div>
+  </div>
+
+  <%- include("../partials/admin-nav", { adminSection: "products" }) %>
+
+  <% if (error) { %>
+  <p class="alert error"><%= error %></p>
+  <% } %>
+  <% if (message) { %>
+  <p class="alert success"><%= message %></p>
+  <% } %>
+
+  <div class="admin-create-modal" id="admin-create-modal" hidden>
+    <div class="admin-create-modal__overlay" id="admin-create-modal-close-overlay"></div>
+    <article class="order-card admin-create-modal__card" id="new-product-card">
+      <div class="admin-create-modal__head">
+        <h3>Crear nuevo producto</h3>
+        <button type="button" class="cart-drawer-close" id="admin-create-modal-close-btn" aria-label="Cerrar modal">x</button>
+      </div>
+      <form action="/admin/products?_csrf=<%= encodeURIComponent(csrfToken) %>" method="POST" enctype="multipart/form-data" class="stack-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <label>Nombre <input type="text" name="name" required /></label>
+        <label>Descripcion <input type="text" name="description" required /></label>
+        <label>Precio USD <input type="number" step="0.01" min="0" name="price" required /></label>
+        <label>
+          Categoria
+          <select name="categoryId">
+            <option value="">Sin categoria</option>
+            <% (categories || []).forEach((category) => { %>
+            <option value="<%= category.id %>"><%= category.name %></option>
+            <% }) %>
+          </select>
+        </label>
+        <label>Subir imagen <input type="file" name="imageFile" accept="image/*" /></label>
+        <label>O URL de imagen <input type="url" name="imageUrl" placeholder="https://..." /></label>
+        <label>Emoji fallback <input type="text" name="imageEmoji" value="🌸" /></label>
+        <label class="admin-inline-check"><input type="checkbox" name="isFeatured" /> Marcar como destacado</label>
+        <button class="primary-btn" type="submit">Guardar producto</button>
+      </form>
+    </article>
+  </div>
+
+  <div class="admin-create-modal" id="admin-create-category-modal" hidden>
+    <div class="admin-create-modal__overlay" id="admin-create-category-modal-close-overlay"></div>
+    <article class="order-card admin-create-modal__card">
+      <div class="admin-create-modal__head">
+        <h3>Agregar categoria</h3>
+        <button type="button" class="cart-drawer-close" id="admin-create-category-modal-close-btn" aria-label="Cerrar modal">x</button>
+      </div>
+      <form action="/admin/categories" method="POST" class="stack-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <label>Nombre <input type="text" name="name" required /></label>
+        <label>Icono (Font Awesome) <input type="text" name="iconClass" placeholder="fa-solid fa-seedling" /></label>
+        <label>Orden <input type="number" name="sortOrder" min="0" value="0" /></label>
+        <button class="primary-btn" type="submit">Guardar categoria</button>
+      </form>
+    </article>
+  </div>
+
+  <div class="admin-create-modal" id="admin-manage-categories-modal" hidden>
+    <div class="admin-create-modal__overlay" id="admin-manage-categories-modal-close-overlay"></div>
+    <article class="order-card admin-create-modal__card">
+      <div class="admin-create-modal__head">
+        <h3>Ver categorias</h3>
+        <button type="button" class="cart-drawer-close" id="admin-manage-categories-modal-close-btn" aria-label="Cerrar modal">x</button>
+      </div>
+      <div class="admin-category-list">
+        <% (allCategories || []).forEach((cat) => { %>
+        <article class="admin-category-row">
+          <div>
+            <strong><%= cat.name %></strong>
+            <p class="helper-text"><%= cat.slug %> · <%= cat.isActive ? "Activa" : "Inactiva" %></p>
+          </div>
+          <div class="admin-category-row-actions">
+            <button
+              type="button"
+              class="ghost-btn js-open-edit-category-modal"
+              data-category-id="<%= cat.id %>"
+              data-category-name="<%= cat.name %>"
+              data-category-icon="<%= cat.iconClass || 'fa-solid fa-seedling' %>"
+              data-category-order="<%= Number(cat.sortOrder || 0) %>"
+              data-category-active="<%= cat.isActive ? '1' : '0' %>"
+            >
+              Editar
+            </button>
+            <form action="/admin/categories/<%= cat.id %>/delete" method="POST" class="js-delete-category-form" data-category-name="<%= cat.name %>">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+              <button class="ghost-btn admin-delete-btn" type="submit">Eliminar</button>
+            </form>
+          </div>
+        </article>
+        <% }) %>
+      </div>
+    </article>
+  </div>
+
+  <section class="admin-featured-block">
+    <div class="admin-featured-head">
+      <h3>Destacados (<%= (featuredProducts || []).length %>)</h3>
+      <button type="button" class="ghost-btn" id="open-add-featured-modal">
+        <i class="fa-solid fa-star"></i> Agregar a destacados
+      </button>
+    </div>
+    <% if (!(featuredProducts || []).length) { %>
+    <p class="helper-text">No hay productos destacados por ahora.</p>
+    <% } else { %>
+    <div class="admin-product-grid">
+      <% featuredProducts.forEach((product) => { %>
+      <article class="order-card admin-product-card mini">
+        <div class="admin-thumb-wrap">
+          <% if (product.imageUrl) { %>
+          <img src="<%= product.imageUrl %>" alt="<%= product.name %>" class="admin-thumb" />
+          <% } else { %>
+          <div class="admin-thumb admin-thumb-fallback"><%= product.imageEmoji || "🌸" %></div>
+          <% } %>
+        </div>
+        <h4><%= product.name %></h4>
+        <p class="helper-text">$<%= Number(product.price).toLocaleString("es-CO") %></p>
+        <form action="/admin/products/<%= product.id %>/featured" method="POST">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <button class="ghost-btn full" type="submit">Quitar destacado</button>
+        </form>
+      </article>
+      <% }) %>
+    </div>
+    <% } %>
+  </section>
+
+  <div class="admin-create-modal" id="admin-add-featured-modal" hidden>
+    <div class="admin-create-modal__overlay" id="admin-add-featured-modal-close-overlay"></div>
+    <article class="order-card admin-create-modal__card">
+      <div class="admin-create-modal__head">
+        <h3>Agregar producto a destacados</h3>
+        <button type="button" class="cart-drawer-close" id="admin-add-featured-modal-close-btn" aria-label="Cerrar modal">x</button>
+      </div>
+      <label>
+        Buscar producto
+        <input type="search" id="featured-search-input" placeholder="Escribe nombre o ID..." />
+      </label>
+      <p class="helper-text" id="featured-search-hint">Escribe para buscar productos y agregarlos a destacados.</p>
+      <p class="helper-text" id="featured-search-empty" hidden>No se encontraron productos con esa busqueda.</p>
+      <div class="admin-featured-picker-list" id="admin-featured-picker-list">
+        <% (typeof allProducts !== "undefined" ? allProducts : []).forEach((product) => { %>
+        <article
+          class="admin-featured-picker-item"
+          data-featured-search="<%= String(product.id + ' ' + product.name).toLowerCase() %>"
+        >
+          <div>
+            <strong>#<%= product.id %> - <%= product.name %></strong>
+            <p class="helper-text">$<%= Number(product.price).toLocaleString("es-CO") %> <% if (product.isFeatured) { %>· Destacado<% } %></p>
+          </div>
+          <form action="/admin/products/<%= product.id %>/featured" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button class="ghost-btn" type="submit" <%= product.isFeatured ? "disabled" : "" %>>
+              <%= product.isFeatured ? "Ya destacado" : "Agregar" %>
+            </button>
+          </form>
+        </article>
+        <% }) %>
+      </div>
+    </article>
+  </div>
+
+  <section class="admin-category-filters">
+    <button type="button" class="ghost-btn admin-category-filter is-active" data-filter="all">Todas</button>
+    <% (groupedProducts || []).forEach((group) => { %>
+    <% if (group.products.length) { %>
+    <button type="button" class="ghost-btn admin-category-filter" data-filter="<%= group.id || 'uncategorized' %>">
+      <%= group.name %> (<%= group.products.length %>)
+    </button>
+    <% } %>
+    <% }) %>
+  </section>
+
+  <% (groupedProducts || []).forEach((group) => { %>
+  <% if (group.products.length) { %>
+  <section class="admin-category-group" data-category-group="<%= group.id || 'uncategorized' %>">
+    <h3 class="admin-category-title"><%= group.name %> <small>(<%= group.products.length %>)</small></h3>
+    <div class="admin-product-grid">
+      <% group.products.forEach((product) => { %>
+      <article class="order-card admin-product-card mini">
+        <div class="admin-thumb-wrap">
+          <% if (product.imageUrl) { %>
+          <img src="<%= product.imageUrl %>" alt="<%= product.name %>" class="admin-thumb" />
+          <% } else { %>
+          <div class="admin-thumb admin-thumb-fallback"><%= product.imageEmoji || "🌸" %></div>
+          <% } %>
+        </div>
+
+        <h4>#<%= product.id %> - <%= product.name %></h4>
+        <p class="helper-text">$<%= Number(product.price).toLocaleString("es-CO") %></p>
+
+        <div class="admin-card-actions">
+          <button
+            type="button"
+            class="ghost-btn full js-open-edit-product-modal"
+            data-product-id="<%= product.id %>"
+            data-product-name="<%= product.name %>"
+            data-product-description="<%= product.description %>"
+            data-product-price="<%= Number(product.price).toFixed(2) %>"
+            data-product-category-id="<%= product.CategoryId || '' %>"
+            data-product-image-url="<%= product.imageUrl || '' %>"
+            data-product-image-emoji="<%= product.imageEmoji || '🌸' %>"
+          >
+            Editar
+          </button>
+          <form action="/admin/products/<%= product.id %>/delete" method="POST" class="js-delete-product-form" data-product-name="<%= product.name %>">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <button class="ghost-btn full admin-delete-btn" type="submit">Eliminar</button>
+          </form>
+        </div>
+      </article>
+      <% }) %>
+    </div>
+  </section>
+  <% } %>
+  <% }) %>
+</main>
+
+<div class="admin-create-modal" id="admin-edit-modal" hidden>
+  <div class="admin-create-modal__overlay" id="admin-edit-modal-close-overlay"></div>
+  <article class="order-card admin-create-modal__card">
+    <div class="admin-create-modal__head">
+      <h3>Editar producto</h3>
+      <button type="button" class="cart-drawer-close" id="admin-edit-modal-close-btn" aria-label="Cerrar modal">x</button>
+    </div>
+    <form id="admin-edit-form" method="POST" action="/admin/products/0/update?_csrf=<%= encodeURIComponent(csrfToken) %>" enctype="multipart/form-data" class="stack-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>Nombre <input type="text" name="name" id="edit-name" required /></label>
+      <label>Descripcion <input type="text" name="description" id="edit-description" required /></label>
+      <label>Precio USD <input type="number" step="0.01" min="0" name="price" id="edit-price" required /></label>
+      <label>
+        Categoria
+        <select name="categoryId" id="edit-category-id">
+          <option value="">Sin categoria</option>
+          <% (categories || []).forEach((category) => { %>
+          <option value="<%= category.id %>"><%= category.name %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>Subir nueva imagen <input type="file" name="imageFile" accept="image/*" /></label>
+      <label>O URL de imagen <input type="url" name="imageUrl" id="edit-image-url" /></label>
+      <label>Emoji fallback <input type="text" name="imageEmoji" id="edit-image-emoji" /></label>
+      <button class="primary-btn" type="submit">Guardar cambios</button>
+    </form>
+  </article>
+</div>
+
+<div class="admin-create-modal" id="admin-edit-category-modal" hidden>
+  <div class="admin-create-modal__overlay" id="admin-edit-category-modal-close-overlay"></div>
+  <article class="order-card admin-create-modal__card">
+    <div class="admin-create-modal__head">
+      <h3>Editar categoria</h3>
+      <button type="button" class="cart-drawer-close" id="admin-edit-category-modal-close-btn" aria-label="Cerrar modal">x</button>
+    </div>
+    <form id="admin-edit-category-form" method="POST" action="/admin/categories/0/update" class="stack-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <label>Nombre <input type="text" name="name" id="edit-category-name" required /></label>
+      <label>Icono (Font Awesome) <input type="text" name="iconClass" id="edit-category-icon" /></label>
+      <label>Orden <input type="number" name="sortOrder" id="edit-category-order" min="0" /></label>
+      <label class="admin-inline-check"><input type="checkbox" name="isActive" id="edit-category-active" /> Categoria activa</label>
+      <button class="primary-btn" type="submit">Guardar cambios</button>
+    </form>
+  </article>
+</div>
+
+<script>
+  (() => {
+    const runtimeConfig = document.getElementById("admin-runtime-config");
+    const csrfTokenValue = runtimeConfig ? (runtimeConfig.dataset.csrfToken || "") : "";
+    const createModal = document.getElementById("admin-create-modal");
+    const createOpenBtn = document.getElementById("open-create-product-modal");
+    const createCloseBtn = document.getElementById("admin-create-modal-close-btn");
+    const createCloseOverlay = document.getElementById("admin-create-modal-close-overlay");
+    const createCategoryModal = document.getElementById("admin-create-category-modal");
+    const createCategoryOpenBtn = document.getElementById("open-create-category-modal");
+    const createCategoryCloseBtn = document.getElementById("admin-create-category-modal-close-btn");
+    const createCategoryCloseOverlay = document.getElementById("admin-create-category-modal-close-overlay");
+    const manageCategoriesModal = document.getElementById("admin-manage-categories-modal");
+    const manageCategoriesOpenBtn = document.getElementById("open-manage-categories-modal");
+    const manageCategoriesCloseBtn = document.getElementById("admin-manage-categories-modal-close-btn");
+    const manageCategoriesCloseOverlay = document.getElementById("admin-manage-categories-modal-close-overlay");
+    const editModal = document.getElementById("admin-edit-modal");
+    const editCloseBtn = document.getElementById("admin-edit-modal-close-btn");
+    const editCloseOverlay = document.getElementById("admin-edit-modal-close-overlay");
+    const editForm = document.getElementById("admin-edit-form");
+    const editCategoryModal = document.getElementById("admin-edit-category-modal");
+    const editCategoryCloseBtn = document.getElementById("admin-edit-category-modal-close-btn");
+    const editCategoryCloseOverlay = document.getElementById("admin-edit-category-modal-close-overlay");
+    const editCategoryForm = document.getElementById("admin-edit-category-form");
+    const categoryButtons = document.querySelectorAll(".admin-category-filter");
+    const categorySections = document.querySelectorAll("[data-category-group]");
+    const editButtons = document.querySelectorAll(".js-open-edit-product-modal");
+    const deleteForms = document.querySelectorAll(".js-delete-product-form");
+    const editCategoryButtons = document.querySelectorAll(".js-open-edit-category-modal");
+    const deleteCategoryForms = document.querySelectorAll(".js-delete-category-form");
+    const addFeaturedModal = document.getElementById("admin-add-featured-modal");
+    const addFeaturedOpenBtn = document.getElementById("open-add-featured-modal");
+    const addFeaturedCloseBtn = document.getElementById("admin-add-featured-modal-close-btn");
+    const addFeaturedCloseOverlay = document.getElementById("admin-add-featured-modal-close-overlay");
+    const featuredSearchInput = document.getElementById("featured-search-input");
+    const featuredPickerItems = document.querySelectorAll(".admin-featured-picker-item");
+    const featuredSearchHint = document.getElementById("featured-search-hint");
+    const featuredSearchEmpty = document.getElementById("featured-search-empty");
+
+    if (!createModal || !createOpenBtn || !createCloseBtn || !createCloseOverlay) return;
+
+    const openModal = (modal) => {
+      modal.hidden = false;
+      document.body.classList.add("drawer-open");
+    };
+
+    const closeModal = (modal) => {
+      if (!modal) return;
+      modal.hidden = true;
+      const anyOpen =
+        !createModal.hidden ||
+        (createCategoryModal && !createCategoryModal.hidden) ||
+        (manageCategoriesModal && !manageCategoriesModal.hidden) ||
+        (editModal && !editModal.hidden) ||
+        (editCategoryModal && !editCategoryModal.hidden) ||
+        (addFeaturedModal && !addFeaturedModal.hidden);
+      if (!anyOpen) {
+        document.body.classList.remove("drawer-open");
+      }
+    };
+
+    createOpenBtn.addEventListener("click", () => openModal(createModal));
+    createCloseBtn.addEventListener("click", () => closeModal(createModal));
+    createCloseOverlay.addEventListener("click", () => closeModal(createModal));
+    if (createCategoryOpenBtn) createCategoryOpenBtn.addEventListener("click", () => openModal(createCategoryModal));
+    if (createCategoryCloseBtn) createCategoryCloseBtn.addEventListener("click", () => closeModal(createCategoryModal));
+    if (createCategoryCloseOverlay) createCategoryCloseOverlay.addEventListener("click", () => closeModal(createCategoryModal));
+    if (manageCategoriesOpenBtn) manageCategoriesOpenBtn.addEventListener("click", () => openModal(manageCategoriesModal));
+    if (manageCategoriesCloseBtn) manageCategoriesCloseBtn.addEventListener("click", () => closeModal(manageCategoriesModal));
+    if (manageCategoriesCloseOverlay) manageCategoriesCloseOverlay.addEventListener("click", () => closeModal(manageCategoriesModal));
+    if (editCloseBtn) editCloseBtn.addEventListener("click", () => closeModal(editModal));
+    if (editCloseOverlay) editCloseOverlay.addEventListener("click", () => closeModal(editModal));
+    if (editCategoryCloseBtn) editCategoryCloseBtn.addEventListener("click", () => closeModal(editCategoryModal));
+    if (editCategoryCloseOverlay) editCategoryCloseOverlay.addEventListener("click", () => closeModal(editCategoryModal));
+    if (addFeaturedOpenBtn) addFeaturedOpenBtn.addEventListener("click", () => openModal(addFeaturedModal));
+    if (addFeaturedCloseBtn) addFeaturedCloseBtn.addEventListener("click", () => closeModal(addFeaturedModal));
+    if (addFeaturedCloseOverlay) addFeaturedCloseOverlay.addEventListener("click", () => closeModal(addFeaturedModal));
+
+    for (const button of categoryButtons) {
+      button.addEventListener("click", () => {
+        const filter = button.dataset.filter;
+        for (const btn of categoryButtons) {
+          btn.classList.toggle("is-active", btn === button);
+        }
+        for (const section of categorySections) {
+          const sameCategory = filter === "all" || section.dataset.categoryGroup === filter;
+          section.hidden = !sameCategory;
+        }
+      });
+    }
+
+    for (const button of editButtons) {
+      button.addEventListener("click", () => {
+        const id = button.dataset.productId;
+        if (!id || !editForm) return;
+        editForm.action = `/admin/products/${id}/update?_csrf=${csrfTokenValue}`;
+        document.getElementById("edit-name").value = button.dataset.productName || "";
+        document.getElementById("edit-description").value = button.dataset.productDescription || "";
+        document.getElementById("edit-price").value = button.dataset.productPrice || "";
+        document.getElementById("edit-category-id").value = button.dataset.productCategoryId || "";
+        document.getElementById("edit-image-url").value = button.dataset.productImageUrl || "";
+        document.getElementById("edit-image-emoji").value = button.dataset.productImageEmoji || "🌸";
+        openModal(editModal);
+      });
+    }
+
+    for (const form of deleteForms) {
+      form.addEventListener("submit", (event) => {
+        const productName = form.dataset.productName || "este producto";
+        const first = window.confirm(`Vas a eliminar "${productName}". Esta accion no se puede deshacer. Continuar?`);
+        if (!first) {
+          event.preventDefault();
+        }
+      });
+    }
+
+    for (const button of editCategoryButtons) {
+      button.addEventListener("click", () => {
+        const id = button.dataset.categoryId;
+        if (!id || !editCategoryForm) return;
+        editCategoryForm.action = `/admin/categories/${id}/update`;
+        document.getElementById("edit-category-name").value = button.dataset.categoryName || "";
+        document.getElementById("edit-category-icon").value = button.dataset.categoryIcon || "fa-solid fa-seedling";
+        document.getElementById("edit-category-order").value = button.dataset.categoryOrder || "0";
+        document.getElementById("edit-category-active").checked = button.dataset.categoryActive === "1";
+        openModal(editCategoryModal);
+      });
+    }
+
+    for (const form of deleteCategoryForms) {
+      form.addEventListener("submit", (event) => {
+        const categoryName = form.dataset.categoryName || "esta categoria";
+        const first = window.confirm(`Vas a eliminar la categoria "${categoryName}". Continuar?`);
+        if (!first) {
+          event.preventDefault();
+        }
+      });
+    }
+
+    const updateFeaturedPicker = () => {
+      if (!featuredSearchInput) return;
+      const q = featuredSearchInput.value.toLowerCase().trim();
+      let visible = 0;
+      for (const item of featuredPickerItems) {
+        const haystack = item.dataset.featuredSearch || "";
+        const show = q.length > 0 && haystack.includes(q);
+        item.hidden = !show;
+        if (show) visible += 1;
+      }
+      if (featuredSearchHint) featuredSearchHint.hidden = q.length > 0;
+      if (featuredSearchEmpty) featuredSearchEmpty.hidden = !(q.length > 0 && visible === 0);
+    };
+
+    if (featuredSearchInput) {
+      featuredSearchInput.addEventListener("input", updateFeaturedPicker);
+      updateFeaturedPicker();
+    }
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      closeModal(createModal);
+      closeModal(createCategoryModal);
+      closeModal(manageCategoriesModal);
+      closeModal(editModal);
+      closeModal(editCategoryModal);
+      closeModal(addFeaturedModal);
+    });
+  })();
+</script>
+<script>
+  (() => {
+    // Mantener modal de creacion abierto si hay error del servidor.
+    const runtimeConfig = document.getElementById("admin-runtime-config");
+    const hasError = runtimeConfig ? runtimeConfig.dataset.hasError === "1" : false;
+    const createModal = document.getElementById("admin-create-modal");
+    if (hasError && createModal) {
+      createModal.hidden = false;
+      document.body.classList.add("drawer-open");
+    }
+  })();
+</script>
+<%- include("../partials/footer") %>

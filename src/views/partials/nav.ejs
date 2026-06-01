@@ -1,0 +1,60 @@
+<div class="top-strip">
+  <div class="shell top-strip-content">
+    <p>Envios en Cali el mismo dia 🌸</p>
+    <div class="social-mini">
+      <a href="/" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+      <a href="/" aria-label="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+    </div>
+  </div>
+</div>
+
+<header class="store-header floral-header">
+  <div class="shell main-nav">
+    <% const navCartItems = (typeof cartData !== "undefined" && cartData && Array.isArray(cartData.cartItems)) ? cartData.cartItems : []; %>
+    <% const cartCount = navCartItems.reduce((acc, item) => acc + Number(item.quantity || 0), 0); %>
+    <a href="/" class="brand-logo">
+      <img src="/img/logo.jpeg" alt="Cali Floral" class="brand-logo-image" />
+    </a>
+
+    <nav class="menu-links floral-menu">
+      <% const navSec = typeof navSection !== 'undefined' ? navSection : (typeof navHomeActive !== 'undefined' && navHomeActive ? 'home' : ''); %>
+      <a class="<%= navSec === 'home' ? 'active' : '' %>" href="/">Inicio</a>
+      <% const navCats = typeof categories !== "undefined" && categories && categories.length ? categories : []; %>
+      <% if (navCats.length) { %>
+        <% navCats.forEach((cat) => { %>
+        <a
+          class="<%= typeof category !== 'undefined' && category && category.slug === cat.slug ? 'active' : '' %>"
+          href="/categoria/<%= cat.slug %>"
+        ><%= cat.name %></a>
+        <% }); %>
+      <% } else { %>
+        <a href="/categoria/ramos">Ramos</a>
+        <a href="/categoria/rosas">Rosas</a>
+        <a href="/categoria/plantas">Plantas</a>
+        <a href="/categoria/regalos">Regalos</a>
+      <% } %>
+      <a class="<%= navSec === 'nosotros' ? 'active' : '' %>" href="/nosotros">Nosotros</a>
+      <a class="<%= navSec === 'contacto' ? 'active' : '' %>" href="/contacto">Contacto</a>
+    </nav>
+
+    <div class="menu-actions floral-actions">
+      <a href="/" aria-label="Buscar" class="icon-link"><i class="fa-solid fa-magnifying-glass"></i></a>
+      <% if (currentUser) { %>
+      <a href="/orders" aria-label="Pedidos" class="icon-link"><i class="fa-regular fa-user"></i></a>
+      <button type="button" class="cart-indicator cart-indicator-btn js-cart-drawer-toggle" aria-label="Carrito">
+        <i class="fa-solid fa-cart-shopping"></i><span><%= cartCount %></span>
+      </button>
+      <a href="/auth/logout" class="action-btn">Salir</a>
+      <% if (currentUser.role === "admin") { %>
+      <a href="/admin/products">Productos</a>
+      <a href="/admin/orders">Pedidos</a>
+      <% } %>
+      <% } else { %>
+      <a href="/auth/login" aria-label="Cuenta" class="icon-link"><i class="fa-regular fa-user"></i></a>
+      <button type="button" class="cart-indicator cart-indicator-btn js-cart-drawer-toggle" aria-label="Carrito">
+        <i class="fa-solid fa-cart-shopping"></i><span><%= cartCount %></span>
+      </button>
+      <% } %>
+    </div>
+  </div>
+</header>

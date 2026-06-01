@@ -1,0 +1,33 @@
+<%- include("../partials/head", { title }) %>
+<%- include("../partials/nav") %>
+<main class="orders-shell">
+  <h2>Mis pedidos</h2>
+  <% if (!orders.length) { %>
+  <p class="empty">Aun no tienes pedidos.</p>
+  <% } %>
+
+  <% orders.forEach((order) => { %>
+  <article class="order-card">
+    <h3>Pedido #<%= order.id %></h3>
+    <p>Referencia: <strong><%= order.paymentReference %></strong></p>
+    <p>Total: <strong>$<%= Number(order.totalAmount).toFixed(2) %></strong></p>
+    <% if (order.shippingAmount != null) { %>
+    <p>Envio: <strong>$<%= Number(order.shippingAmount).toFixed(2) %></strong></p>
+    <% } %>
+    <p>Entrega: <strong><%= order.fulfillmentType === "pickup" ? "Recogida en sitio" : "Envio a domicilio" %></strong></p>
+    <% if (order.deliveryZoneLabel) { %>
+    <p>Zona: <strong><%= order.deliveryZoneLabel %></strong></p>
+    <% } %>
+    <p>Metodo: <strong><%= order.paymentMethodLabel || order.paymentMethod %></strong></p>
+    <p>Direccion / detalle: <strong><%= order.shippingAddress %></strong></p>
+    <ul>
+      <% order.OrderItems.forEach((item) => { %>
+      <li>
+        <%= item.productNameSnapshot %> x <%= item.quantity %> - $<%= Number(item.unitPrice).toFixed(2) %>
+      </li>
+      <% }) %>
+    </ul>
+  </article>
+  <% }) %>
+</main>
+<%- include("../partials/footer") %>

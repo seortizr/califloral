@@ -1,0 +1,29 @@
+<%- include("../partials/head", { title }) %>
+<%- include("../partials/nav") %>
+<main class="page-stack floral-home">
+  <section class="shell showcase-panel catalog-category-page">
+    <div class="showcase-layout">
+      <%- include("../partials/catalog-sidebar") %>
+
+      <section class="featured-panel">
+        <div class="featured-header">
+          <h2><%= category.name %></h2>
+          <a href="/">Volver al inicio</a>
+        </div>
+        <%- include("../partials/catalog-product-grid", { products }) %>
+      </section>
+    </div>
+  </section>
+
+  <section class="shell trust-strip">
+    <article><strong><i class="fa-solid fa-truck-fast"></i> Envios rapidos</strong><span>El mismo dia en Cali</span></article>
+    <article><strong><i class="fa-solid fa-leaf"></i> Flores frescas</strong><span>Calidad garantizada</span></article>
+    <article><strong><i class="fa-regular fa-heart"></i> Disenos unicos</strong><span>Hechos con amor</span></article>
+    <article><strong><i class="fa-solid fa-lock"></i> Pago seguro</strong><span>Tus compras protegidas</span></article>
+  </section>
+
+  <%- include("../partials/cart-panel") %>
+</main>
+
+<%- include("../partials/catalog-modals") %>
+<%- include("../partials/footer") %>

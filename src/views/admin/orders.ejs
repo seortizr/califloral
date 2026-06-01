@@ -1,0 +1,110 @@
+<%- include("../partials/head", { title }) %>
+<%- include("../partials/nav") %>
+<main class="orders-shell admin-orders-page">
+  <div class="admin-toolbar">
+    <h2>Pedidos y entregas</h2>
+    <div class="admin-toolbar-actions">
+      <a class="ghost-btn admin-add-btn" href="/admin/products">Gestionar productos</a>
+    </div>
+  </div>
+
+  <%- include("../partials/admin-nav", { adminSection: "orders" }) %>
+
+  <p class="helper-text admin-orders-intro">
+    Cada pedido con envio muestra la direccion y un mapa. Usa los botones para abrir Google Maps o ver la ruta.
+  </p>
+
+  <form method="GET" action="/admin/orders" class="admin-orders-filters stack-form">
+    <label>
+      Tipo de entrega
+      <select name="fulfillment" onchange="this.form.submit()">
+        <option value="" <%= !filterFulfillment ? "selected" : "" %>>Todos</option>
+        <option value="delivery" <%= filterFulfillment === "delivery" ? "selected" : "" %>>Envio a domicilio</option>
+        <option value="pickup" <%= filterFulfillment === "pickup" ? "selected" : "" %>>Recogida en sitio</option>
+      </select>
+    </label>
+  </form>
+
+  <% if (!orders.length) { %>
+  <p class="empty">No hay pedidos<%= filterFulfillment ? " con ese filtro" : "" %>.</p>
+  <% } %>
+
+  <% orders.forEach((order) => { %>
+  <article class="order-card admin-order-card">
+    <header class="admin-order-head">
+      <div>
+        <h3>Pedido #<%= order.id %></h3>
+        <p class="helper-text"><%= order.createdAtFormatted %></p>
+      </div>
+      <span class="admin-order-status admin-order-status--<%= order.status %>"><%= order.statusLabel %></span>
+    </header>
+
+    <div class="admin-order-meta">
+      <p><strong>Cliente:</strong> <%= order.User ? order.User.name : "—" %> (<%= order.User ? order.User.email : "—" %>)</p>
+      <p><strong>Referencia:</strong> <%= order.paymentReference %></p>
+      <p><strong>Total:</strong> $<%= Number(order.totalAmount).toLocaleString("es-CO") %></p>
+      <% if (order.shippingAmount != null) { %>
+      <p><strong>Envio:</strong> $<%= Number(order.shippingAmount).toLocaleString("es-CO") %></p>
+      <% } %>
+      <p>
+        <strong>Entrega:</strong>
+        <%= order.fulfillmentType === "pickup" ? "Recogida en sitio" : "Envio a domicilio" %>
+      </p>
+      <% if (order.deliveryZoneLabel) { %>
+      <p><strong>Zona:</strong> <%= order.deliveryZoneLabel %></p>
+      <% } %>
+      <p><strong>Pago:</strong> <%= order.paymentMethodLabel %></p>
+    </div>
+
+    <div class="admin-order-address-block">
+      <p><strong>Direccion / detalle:</strong></p>
+      <p class="admin-order-address"><%= order.mapInfo.displayAddress %></p>
+
+      <% if (order.mapInfo.canShowMap) { %>
+      <div class="admin-order-map-actions">
+        <a
+          class="primary-btn admin-map-btn"
+          href="<%= order.mapInfo.mapsUrl %>"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <i class="fa-solid fa-location-dot"></i> <%= order.mapInfo.mapsLabel %>
+        </a>
+        <% if (order.mapInfo.directionsUrl && !order.mapInfo.isPickup) { %>
+        <a
+          class="ghost-btn admin-map-btn"
+          href="<%= order.mapInfo.directionsUrl %>"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <i class="fa-solid fa-route"></i> <%= order.mapInfo.directionsLabel %>
+        </a>
+        <% } %>
+      </div>
+
+      <div class="admin-order-map-wrap">
+        <iframe
+          title="Mapa pedido #<%= order.id %>"
+          src="<%= order.mapInfo.embedUrl %>"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen
+        ></iframe>
+      </div>
+      <% } else { %>
+      <p class="helper-text">No hay ubicacion para mostrar en el mapa.</p>
+      <% } %>
+    </div>
+
+    <div class="admin-order-items">
+      <p><strong>Productos:</strong></p>
+      <ul>
+        <% order.OrderItems.forEach((item) => { %>
+        <li><%= item.productNameSnapshot %> x <%= item.quantity %> — $<%= Number(item.unitPrice).toLocaleString("es-CO") %></li>
+        <% }) %>
+      </ul>
+    </div>
+  </article>
+  <% }) %>
+</main>
+<%- include("../partials/footer") %>

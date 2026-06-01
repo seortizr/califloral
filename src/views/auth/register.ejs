@@ -1,0 +1,46 @@
+<%- include("../partials/head", { title }) %>
+<%- include("../partials/nav") %>
+<main class="auth-shell auth-login-page">
+  <section class="auth-login-layout">
+    <article class="auth-login-brand">
+      <p class="auth-kicker">Unete a CaliFloral</p>
+      <h1>Crea tu cuenta en segundos</h1>
+      <p>Guarda tus direcciones, revisa tus pedidos y finaliza compras con mas comodidad.</p>
+      <ul class="auth-benefits">
+        <li><i class="fa-solid fa-bag-shopping"></i> Carrito sincronizado si ya agregaste productos</li>
+        <li><i class="fa-solid fa-receipt"></i> Historial de pedidos</li>
+        <li><i class="fa-solid fa-headset"></i> Atencion mas rapida</li>
+      </ul>
+    </article>
+
+    <article class="auth-card auth-login-card">
+      <h2>Crear cuenta</h2>
+      <% if (typeof guestCartPending !== "undefined" && guestCartPending) { %>
+      <p class="alert success">
+        Tienes productos en el carrito. Al crear tu cuenta los pasamos a tu cuenta para que puedas pagar de inmediato.
+      </p>
+      <% } %>
+      <% if (error) { %>
+      <p class="alert error"><%= error %></p>
+      <% } %>
+      <form method="POST" action="/auth/register" class="stack-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <label>
+          Nombre completo
+          <input type="text" name="name" required />
+        </label>
+        <label>
+          Correo
+          <input type="email" name="email" required />
+        </label>
+        <label>
+          Contrasena (minimo 8)
+          <input type="password" name="password" minlength="8" required />
+        </label>
+        <button class="primary-btn auth-login-btn" type="submit">Crear cuenta</button>
+      </form>
+      <p class="helper-text">Ya tienes cuenta? <a href="/auth/login">Inicia sesion</a></p>
+    </article>
+  </section>
+</main>
+<%- include("../partials/footer") %>

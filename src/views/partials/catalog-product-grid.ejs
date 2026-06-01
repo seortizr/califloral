@@ -1,0 +1,50 @@
+<% const realisticImages = ["/img/ramo.jpg", "/img/rosas.jpg", "/img/ramovariado.jpg", "/img/ramos especiales.jpg", "/img/detalles.jpg"]; %>
+<% if (!products || !products.length) { %>
+<p class="empty catalog-empty-msg">No hay productos en esta seccion por ahora.</p>
+<% } else { %>
+<div class="featured-grid">
+  <% products.forEach((product, idx) => { %>
+  <% const displayImage = product.imageUrl || realisticImages[idx % realisticImages.length] || ""; %>
+  <article class="featured-card product-card-enhanced">
+    <figure class="featured-image-wrap">
+      <% if (displayImage) { %>
+      <img src="<%= displayImage %>" alt="<%= product.name %>" class="catalog-photo" />
+      <% } else { %>
+      <div class="template-emoji"><%= product.imageEmoji %></div>
+      <% } %>
+    </figure>
+    <div class="featured-description">
+      <p class="product-name"><strong><%= product.name %></strong></p>
+      <p class="product-price">$<%= Number(product.price).toLocaleString("es-CO") %></p>
+      <div class="product-card-actions">
+        <button
+          class="template-buy-btn open-product-modal-btn"
+          type="button"
+          data-product-id="<%= product.id %>"
+          data-product-name="<%= product.name %>"
+          data-product-description="<%= product.description %>"
+          data-product-price="<%= Number(product.price).toFixed(2) %>"
+          data-product-emoji="<%= product.imageEmoji %>"
+          data-product-image="<%= displayImage || "" %>"
+        >
+          <i class="fa-solid fa-cart-shopping"></i> AGREGAR
+        </button>
+        <a
+          class="product-wa-btn product-wa-icon-only"
+          href="#"
+          data-product-name="<%= product.name %>"
+          data-product-price="<%= Number(product.price).toLocaleString('es-CO') %>"
+          data-product-image="<%= displayImage || '' %>"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Consultar por WhatsApp"
+          title="Consultar por WhatsApp"
+        >
+          <i class="fa-brands fa-whatsapp"></i>
+        </a>
+      </div>
+    </div>
+  </article>
+  <% }); %>
+</div>
+<% } %>

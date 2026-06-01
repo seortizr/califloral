@@ -1,0 +1,80 @@
+<%- include("../partials/head", { title }) %>
+<%- include("../partials/nav") %>
+<main class="page-stack floral-home static-page">
+  <section class="static-hero">
+    <div class="static-hero-inner">
+      <h1><%= contact.heroTitle %></h1>
+      <p class="lead"><%= contact.heroSubtitle %></p>
+    </div>
+  </section>
+
+  <section class="shell contact-layout">
+    <div class="contact-cards">
+      <article class="contact-card">
+        <div class="cc-ic"><i class="fa-solid fa-phone"></i></div>
+        <div class="cc-body">
+          <strong>Telefono</strong>
+          <a href="tel:<%= contact.phoneTel %>"><%= contact.phoneDisplay %></a>
+        </div>
+      </article>
+
+      <article class="contact-card">
+        <div class="cc-ic"><i class="fa-brands fa-whatsapp"></i></div>
+        <div class="cc-body">
+          <strong>WhatsApp</strong>
+          <a href="https://wa.me/<%= contact.whatsapp %>" target="_blank" rel="noopener noreferrer">Abrir chat directo</a>
+        </div>
+      </article>
+
+      <article class="contact-card">
+        <div class="cc-ic"><i class="fa-solid fa-envelope"></i></div>
+        <div class="cc-body">
+          <strong>Email</strong>
+          <a href="mailto:<%= contact.email %>"><%= contact.email %></a>
+        </div>
+      </article>
+
+      <article class="contact-card">
+        <div class="cc-ic"><i class="fa-solid fa-location-dot"></i></div>
+        <div class="cc-body">
+          <strong>Ubicacion</strong>
+          <span><%= contact.address %></span>
+          <p><%= contact.hours %></p>
+        </div>
+      </article>
+    </div>
+
+    <article class="contact-map-card">
+      <div class="map-head">Georeferenciacion</div>
+      <% if (mapUrl) { %>
+      <iframe
+        src="<%= mapUrl %>"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        allowfullscreen
+        title="Ubicacion CaliFloral"
+      ></iframe>
+      <% } else { %>
+      <div class="contact-map-placeholder">
+        <p>No hay mapa configurado aun. Edita <code>src/content/site-pages.json</code> para definir <code>mapEmbedUrl</code> o <code>lat/lng</code>.</p>
+      </div>
+      <% } %>
+    </article>
+  </section>
+
+  <% if (contact.note) { %>
+  <section class="shell" style="margin-top: 0.75rem;">
+    <p class="helper-text"><%= contact.note %></p>
+  </section>
+  <% } %>
+</main>
+<a
+  class="whatsapp-float"
+  href="https://wa.me/<%= contact.whatsapp %>"
+  target="_blank"
+  rel="noopener noreferrer"
+  aria-label="Contactar por WhatsApp"
+>
+  <i class="fa-brands fa-whatsapp"></i>
+</a>
+<%- include("../partials/footer") %>

@@ -1,0 +1,8 @@
+node_modules/
+.env
+.env.local
+data/
+.vercel
+npm-debug.log*
+WebStoreTemplate-master/
+WebStoreTemplate-master.zip
