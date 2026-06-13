@@ -26,6 +26,7 @@ function mysqlDialectOptions() {
   const options = {
     decimalNumbers: true,
     charset: "utf8mb4",
+    connectTimeout: Number(process.env.DB_CONNECT_TIMEOUT || 20000),
   };
 
   if (process.env.DB_SSL === "true") {
@@ -73,29 +74,75 @@ function buildConfig() {
   return mysqlConnectionOptions();
 }
 
-const sequelize = new Sequelize(buildConfig());
+function isUnknownDatabaseError(error) {
+  const code = error?.original?.code || error?.parent?.code || "";
+  return code === "ER_BAD_DB_ERROR" || /unknown database/i.test(String(error.message || ""));
+}
 
-/**
- * Crea la base de datos en MySQL si no existe (tipico XAMPP).
- * Las tablas las crea `sequelize.sync()` en server.js.
- */
-async function ensureDatabaseExists() {
-  if (isSqliteMode()) return;
-
-  const dbName = mysqlDatabaseName();
+function buildServerSequelize() {
   const { host, port, username, password } = mysqlConnectionOptions();
-  const server = new Sequelize({
+  return new Sequelize({
     dialect: "mysql",
     host,
     port,
     username,
     password,
     logging: false,
+    dialectOptions: mysqlDialectOptions(),
   });
-  await server.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`);
-  await server.close();
+}
+
+const sequelize = new Sequelize(buildConfig());
+
+/**
+ * Intenta crear la base si el usuario MySQL tiene permiso.
+ * En hosting compartido (Hostinger/cPanel) la base suele existir ya; si falla, se continua.
+ */
+async function ensureDatabaseExists() {
+  if (isSqliteMode()) return { created: false, skipped: true };
+
+  const dbName = mysqlDatabaseName();
+  const server = buildServerSequelize();
+
+  try {
+    await server.query(
+      `CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
+    );
+    return { created: true };
+  } catch (error) {
+    console.warn(
+      "CREATE DATABASE no disponible (normal en hosting compartido si la base ya fue creada en el panel):",
+      error.message
+    );
+    return { created: false, warning: error.message };
+  } finally {
+    await server.close();
+  }
+}
+
+/**
+ * Conecta a MySQL. Si la base no existe, intenta crearla y vuelve a conectar.
+ */
+async function connectWithAutoSetup(instance = sequelize) {
+  if (isSqliteMode()) {
+    await instance.authenticate();
+    return;
+  }
+
+  try {
+    await instance.authenticate();
+    return;
+  } catch (error) {
+    if (!isUnknownDatabaseError(error)) {
+      throw error;
+    }
+  }
+
+  await ensureDatabaseExists();
+  await instance.authenticate();
 }
 
 sequelize.ensureDatabaseExists = ensureDatabaseExists;
+sequelize.connectWithAutoSetup = connectWithAutoSetup;
 
 module.exports = sequelize;

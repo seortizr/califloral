@@ -6,9 +6,8 @@ const { syncSessionStore } = require("./middlewares/securityMiddleware");
 let readyPromise = null;
 
 function shouldSyncAlter() {
-  if (process.env.DB_SYNC_ALTER === "true") return true;
   if (process.env.DB_SYNC_ALTER === "false") return false;
-  return process.env.NODE_ENV !== "production";
+  return true;
 }
 
 async function ensureAppReady() {
@@ -18,11 +17,28 @@ async function ensureAppReady() {
   return readyPromise;
 }
 
-async function initializeApp() {
-  const skipCreate = process.env.SKIP_DB_CREATE === "true" || Boolean(process.env.VERCEL);
-  if (!skipCreate) {
-    await database.ensureDatabaseExists();
+function assertDatabaseConfigured() {
+  if (process.env.DB_DIALECT === "sqlite") {
+    if (process.env.VERCEL) {
+      throw new Error(
+        "SQLite no funciona en Vercel. Configura MySQL con DB_HOST, DB_USER, DB_PASSWORD y DB_NAME."
+      );
+    }
+    return;
   }
+
+  const hasRemoteConfig = Boolean(process.env.DB_HOST && process.env.DB_USER && process.env.DB_NAME);
+  if ((process.env.VERCEL || process.env.NODE_ENV === "production") && !hasRemoteConfig) {
+    throw new Error(
+      "Faltan variables de base de datos. Configura DB_HOST, DB_USER, DB_PASSWORD y DB_NAME en Vercel."
+    );
+  }
+}
+
+async function initializeApp() {
+  assertDatabaseConfigured();
+
+  await database.connectWithAutoSetup(sequelize);
 
   await sequelize.sync({ alter: shouldSyncAlter() });
   await syncSessionStore();

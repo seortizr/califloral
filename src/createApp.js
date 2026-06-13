@@ -16,13 +16,23 @@ function createApp() {
   app.set("view engine", "ejs");
   app.set("views", path.join(__dirname, "views"));
 
+  app.get("/health", (req, res) => {
+    res.status(200).json({ ok: true, service: "califloral" });
+  });
+
   app.use(async (req, res, next) => {
     try {
       await ensureAppReady();
       next();
     } catch (error) {
       console.error("Error al inicializar la aplicacion", error);
-      res.status(503).send("Servicio no disponible. Revisa la conexion a la base de datos.");
+      const hint = String(error.message || "");
+      res
+        .status(503)
+        .type("html")
+        .send(
+          `<h1>Servicio no disponible</h1><p>La base de datos no esta configurada o no responde.</p><p><strong>Detalle:</strong> ${hint.replace(/</g, "&lt;")}</p><p>En Vercel debes crear MySQL en la nube (Railway) y agregar DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_SSL=true y SKIP_DB_CREATE=true.</p>`
+        );
     }
   });
 
@@ -44,7 +54,8 @@ function createApp() {
     if (error.code === "EBADCSRFTOKEN") {
       return res.status(403).send("Solicitud invalida por seguridad (CSRF).");
     }
-    return next(error);
+    console.error("Error en la solicitud", error);
+    return res.status(500).send("Ocurrio un error en el servidor.");
   });
 
   return app;
