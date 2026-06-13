@@ -31,7 +31,7 @@ function createApp() {
         .status(503)
         .type("html")
         .send(
-          `<h1>Servicio no disponible</h1><p>La base de datos no esta configurada o no responde.</p><p><strong>Detalle:</strong> ${hint.replace(/</g, "&lt;")}</p><p>En Vercel debes crear MySQL en la nube (Railway) y agregar DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_SSL=true y SKIP_DB_CREATE=true.</p>`
+          `<h1>Servicio no disponible</h1><p>La base de datos no esta configurada o no responde.</p><p><strong>Detalle:</strong> ${hint.replace(/</g, "&lt;")}</p><p>Revisa en Vercel las variables DB_HOST, DB_USER, DB_PASSWORD, DB_NAME y en Hostinger activa MySQL remoto para permitir conexiones externas.</p>`
         );
     }
   });

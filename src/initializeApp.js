@@ -6,7 +6,10 @@ const { syncSessionStore } = require("./middlewares/securityMiddleware");
 let readyPromise = null;
 
 function shouldSyncAlter() {
+  if (process.env.DB_SYNC_ALTER === "true") return true;
   if (process.env.DB_SYNC_ALTER === "false") return false;
+  // alter en cada arranque es lento (~20s+) y Vercel corta la funcion a ~10s
+  if (process.env.VERCEL || process.env.NODE_ENV === "production") return false;
   return true;
 }
 
