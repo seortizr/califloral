@@ -1,5 +1,5 @@
 const database = require("./config/database");
-const { sequelize } = require("./models");
+const { sequelize, PaymentConfig, PaymentNotification, Order } = require("./models");
 const { seedDatabase } = require("./services/seedService");
 const { syncSessionStore } = require("./middlewares/securityMiddleware");
 
@@ -33,7 +33,7 @@ function assertDatabaseConfigured() {
   const hasRemoteConfig = Boolean(process.env.DB_HOST && process.env.DB_USER && process.env.DB_NAME);
   if ((process.env.VERCEL || process.env.NODE_ENV === "production") && !hasRemoteConfig) {
     throw new Error(
-      "Faltan variables de base de datos. Configura DB_HOST, DB_USER, DB_PASSWORD y DB_NAME en Vercel."
+      "Faltan variables de base de datos. Configura DB_HOST, DB_USER, DB_PASSWORD y DB_NAME."
     );
   }
 }
@@ -50,15 +50,22 @@ async function withTimeout(promise, ms, label) {
   }
 }
 
+async function syncPaymentModuleTables() {
+  await PaymentConfig.sync();
+  await PaymentNotification.sync();
+  await Order.sync({ alter: true });
+}
+
 async function initializeApp() {
   assertDatabaseConfigured();
 
-  const timeoutMs = Number(process.env.DB_INIT_TIMEOUT || 12000);
+  const timeoutMs = Number(process.env.DB_INIT_TIMEOUT || 20000);
 
   await withTimeout(database.connectWithAutoSetup(sequelize), timeoutMs, "Conexion MySQL");
   await withTimeout(sequelize.sync({ alter: shouldSyncAlter() }), timeoutMs, "Sincronizacion de tablas");
+  await withTimeout(syncPaymentModuleTables(), timeoutMs, "Tablas de pagos");
   await withTimeout(syncSessionStore(), timeoutMs, "Sesiones");
   await withTimeout(seedDatabase(), timeoutMs, "Datos iniciales");
 }
 
-module.exports = { ensureAppReady, initializeApp };
+module.exports = { ensureAppReady, initializeApp, syncPaymentModuleTables };

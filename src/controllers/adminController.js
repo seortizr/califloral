@@ -261,21 +261,50 @@ async function ordersDashboard(req, res) {
 }
 
 async function paymentsDashboard(req, res) {
-  const config = buildAdminView(await getPaymentConfig(true));
-  const summary = await getPaymentSummary();
-  const recentNotifications = await getAdminPaymentNotifications({ statusFilter: "" });
-  return res.render("admin/payments", {
-    title: "Admin | Pasarelas de pago",
-    config,
-    providers: Object.values(PROVIDERS),
-    appUrl: getAppBaseUrl(req),
-    summary,
-    recentNotifications: recentNotifications.slice(0, 8),
-    message: req.query.message || null,
-    error: req.query.error || null,
-    navSection: "",
-    adminSection: "payments",
-  });
+  try {
+    const config = buildAdminView(await getPaymentConfig(true));
+    const summary = await getPaymentSummary();
+    const recentNotifications = await getAdminPaymentNotifications({ statusFilter: "" });
+    return res.render("admin/payments", {
+      title: "Admin | Pasarelas de pago",
+      config,
+      providers: Object.values(PROVIDERS),
+      appUrl: getAppBaseUrl(req),
+      summary,
+      recentNotifications: recentNotifications.slice(0, 8),
+      message: req.query.message || null,
+      error: req.query.error || null,
+      navSection: "",
+      adminSection: "payments",
+    });
+  } catch (error) {
+    console.error("Error en panel Wompi:", error);
+    return res.status(500).render("admin/payments", {
+      title: "Admin | Pasarelas de pago",
+      config: {
+        providerLabel: "Manual",
+        wompiActive: false,
+        wompiConfigured: false,
+        manualActive: true,
+        activeProvider: "manual",
+        manualTransferEnabled: true,
+        manualCodEnabled: true,
+        wompiEnvironment: "sandbox",
+        wompiPublicKey: "",
+        wompiPrivateKeyMasked: "",
+        wompiIntegritySecretMasked: "",
+        wompiEventsSecretMasked: "",
+      },
+      providers: Object.values(PROVIDERS),
+      appUrl: getAppBaseUrl(req),
+      summary: { totalCollected: 0, successCount: 0, failedCount: 0, pendingCount: 0 },
+      recentNotifications: [],
+      message: null,
+      error: `No se pudo cargar Wompi: ${error.message}. Reinicia la app en Hostinger o activa DB_SYNC_ALTER=true una vez.`,
+      navSection: "",
+      adminSection: "payments",
+    });
+  }
 }
 
 async function paymentNotificationsDashboard(req, res) {

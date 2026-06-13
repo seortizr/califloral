@@ -70,62 +70,75 @@ async function recordPaymentNotification({
 }
 
 async function getAdminPaymentNotifications({ statusFilter = "" } = {}) {
-  const where = {};
-  if (statusFilter === "success" || statusFilter === "failed" || statusFilter === "pending") {
-    where.status = statusFilter;
-  }
+  try {
+    const where = {};
+    if (statusFilter === "success" || statusFilter === "failed" || statusFilter === "pending") {
+      where.status = statusFilter;
+    }
 
-  const notifications = await PaymentNotification.findAll({
-    where,
-    include: [
-      {
-        model: Order,
-        include: [{ model: User, attributes: ["id", "name", "email"] }],
-      },
-    ],
-    order: [["createdAt", "DESC"]],
-    limit: 100,
-  });
-
-  return notifications.map((item) => {
-    const plain = item.get({ plain: true });
-    plain.statusLabel = STATUS_LABELS[plain.status] || plain.status;
-    plain.methodLabel = paymentMethodLabel(plain.paymentMethod);
-    plain.createdAtFormatted = new Date(plain.createdAt).toLocaleString("es-CO", {
-      dateStyle: "medium",
-      timeStyle: "short",
+    const notifications = await PaymentNotification.findAll({
+      where,
+      include: [
+        {
+          model: Order,
+          include: [{ model: User, attributes: ["id", "name", "email"] }],
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+      limit: 100,
     });
-    plain.customerName = plain.Order?.User?.name || "—";
-    plain.customerEmail = plain.Order?.User?.email || "—";
-    plain.orderId = plain.Order?.id || null;
-    return plain;
-  });
+
+    return notifications.map((item) => {
+      const plain = item.get({ plain: true });
+      plain.statusLabel = STATUS_LABELS[plain.status] || plain.status;
+      plain.methodLabel = paymentMethodLabel(plain.paymentMethod);
+      plain.createdAtFormatted = new Date(plain.createdAt).toLocaleString("es-CO", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+      plain.customerName = plain.Order?.User?.name || "—";
+      plain.customerEmail = plain.Order?.User?.email || "—";
+      plain.orderId = plain.Order?.id || null;
+      return plain;
+    });
+  } catch {
+    return [];
+  }
 }
 
 async function getPaymentSummary() {
-  const notifications = await PaymentNotification.findAll();
-  let totalCollected = 0;
-  let successCount = 0;
-  let failedCount = 0;
-  let pendingCount = 0;
+  try {
+    const notifications = await PaymentNotification.findAll();
+    let totalCollected = 0;
+    let successCount = 0;
+    let failedCount = 0;
+    let pendingCount = 0;
 
-  for (const item of notifications) {
-    if (item.status === "success") {
-      successCount += 1;
-      totalCollected += Number(item.amount);
-    } else if (item.status === "failed") {
-      failedCount += 1;
-    } else {
-      pendingCount += 1;
+    for (const item of notifications) {
+      if (item.status === "success") {
+        successCount += 1;
+        totalCollected += Number(item.amount);
+      } else if (item.status === "failed") {
+        failedCount += 1;
+      } else {
+        pendingCount += 1;
+      }
     }
-  }
 
-  return {
-    totalCollected,
-    successCount,
-    failedCount,
-    pendingCount,
-  };
+    return {
+      totalCollected,
+      successCount,
+      failedCount,
+      pendingCount,
+    };
+  } catch {
+    return {
+      totalCollected: 0,
+      successCount: 0,
+      failedCount: 0,
+      pendingCount: 0,
+    };
+  }
 }
 
 module.exports = {

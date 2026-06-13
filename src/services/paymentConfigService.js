@@ -35,14 +35,26 @@ async function getPaymentConfig(force = false) {
     return cachedConfig;
   }
 
-  let config = await PaymentConfig.findOne({ order: [["id", "ASC"]] });
-  if (!config) {
-    config = await PaymentConfig.create({});
-  }
+  try {
+    let config = await PaymentConfig.findOne({ order: [["id", "ASC"]] });
+    if (!config) {
+      config = await PaymentConfig.create({});
+    }
 
-  cachedConfig = config;
-  cacheTime = now;
-  return config;
+    cachedConfig = config;
+    cacheTime = now;
+    return config;
+  } catch (error) {
+    const { syncPaymentModuleTables } = require("../initializeApp");
+    await syncPaymentModuleTables();
+    let config = await PaymentConfig.findOne({ order: [["id", "ASC"]] });
+    if (!config) {
+      config = await PaymentConfig.create({});
+    }
+    cachedConfig = config;
+    cacheTime = now;
+    return config;
+  }
 }
 
 function clearPaymentConfigCache() {
