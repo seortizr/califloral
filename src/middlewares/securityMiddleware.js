@@ -21,9 +21,7 @@ async function syncSessionStore() {
   await store.sync();
 }
 
-function configureSecurity(app) {
-  const store = getSessionStore();
-
+function configureStaticAssets(app) {
   app.use(
     helmet({
       contentSecurityPolicy: false,
@@ -34,6 +32,10 @@ function configureSecurity(app) {
   app.use(expressSafeParsers());
   app.use(expressStatic(path.join(__dirname, "../public")));
   app.use("/img", expressStatic(path.join(__dirname, "../views/img")));
+}
+
+function configureSessionSecurity(app) {
+  const store = getSessionStore();
 
   app.use(
     session({
@@ -70,7 +72,11 @@ function configureSecurity(app) {
   app.use(csrf());
 
   app.use((req, res, next) => {
-    res.locals.csrfToken = req.csrfToken();
+    try {
+      res.locals.csrfToken = req.csrfToken();
+    } catch {
+      res.locals.csrfToken = "";
+    }
     res.locals.currentUser = req.session.user || null;
     next();
   });
@@ -86,4 +92,12 @@ function expressStatic(publicPath) {
   return express.static(publicPath);
 }
 
-module.exports = { configureSecurity, syncSessionStore };
+module.exports = {
+  configureStaticAssets,
+  configureSessionSecurity,
+  configureSecurity: (app) => {
+    configureStaticAssets(app);
+    configureSessionSecurity(app);
+  },
+  syncSessionStore,
+};

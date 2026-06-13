@@ -3,6 +3,7 @@ const path = require("path");
 const { Sequelize } = require("sequelize");
 
 function isSqliteMode() {
+  if (process.env.VERCEL) return false;
   return String(process.env.DB_DIALECT || "").toLowerCase() === "sqlite";
 }
 
@@ -26,7 +27,7 @@ function mysqlDialectOptions() {
   const options = {
     decimalNumbers: true,
     charset: "utf8mb4",
-    connectTimeout: Number(process.env.DB_CONNECT_TIMEOUT || 20000),
+    connectTimeout: Number(process.env.DB_CONNECT_TIMEOUT || 10000),
   };
 
   if (process.env.DB_SSL === "true") {

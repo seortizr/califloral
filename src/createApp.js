@@ -1,6 +1,9 @@
 const path = require("path");
 const express = require("express");
-const { configureSecurity } = require("./middlewares/securityMiddleware");
+const {
+  configureStaticAssets,
+  configureSessionSecurity,
+} = require("./middlewares/securityMiddleware");
 const { catalogLocalsMiddleware } = require("./middlewares/catalogLocalsMiddleware");
 const { shippingLocalsMiddleware } = require("./middlewares/shippingLocalsMiddleware");
 const { paymentLocalsMiddleware } = require("./middlewares/paymentLocalsMiddleware");
@@ -20,6 +23,8 @@ function createApp() {
     res.status(200).json({ ok: true, service: "califloral" });
   });
 
+  configureStaticAssets(app);
+
   app.use(async (req, res, next) => {
     try {
       await ensureAppReady();
@@ -31,12 +36,12 @@ function createApp() {
         .status(503)
         .type("html")
         .send(
-          `<h1>Servicio no disponible</h1><p>La base de datos no esta configurada o no responde.</p><p><strong>Detalle:</strong> ${hint.replace(/</g, "&lt;")}</p><p>Revisa en Vercel las variables DB_HOST, DB_USER, DB_PASSWORD, DB_NAME y en Hostinger activa MySQL remoto para permitir conexiones externas.</p>`
+          `<h1>Servicio no disponible</h1><p>La base de datos no responde o faltan variables de entorno.</p><p><strong>Detalle:</strong> ${hint.replace(/</g, "&lt;")}</p><p>En Vercel revisa DB_HOST, DB_USER, DB_PASSWORD, DB_NAME. En Hostinger activa MySQL remoto.</p>`
         );
     }
   });
 
-  configureSecurity(app);
+  configureSessionSecurity(app);
 
   app.use(catalogLocalsMiddleware);
   app.use(shippingLocalsMiddleware);
@@ -55,7 +60,10 @@ function createApp() {
       return res.status(403).send("Solicitud invalida por seguridad (CSRF).");
     }
     console.error("Error en la solicitud", error);
-    return res.status(500).send("Ocurrio un error en el servidor.");
+    if (!res.headersSent) {
+      return res.status(500).send("Ocurrio un error en el servidor.");
+    }
+    return next(error);
   });
 
   return app;

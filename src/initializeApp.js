@@ -7,15 +7,15 @@ let readyPromise = null;
 
 function shouldSyncAlter() {
   if (process.env.DB_SYNC_ALTER === "true") return true;
-  if (process.env.DB_SYNC_ALTER === "false") return false;
-  // alter en cada arranque es lento (~20s+) y Vercel corta la funcion a ~10s
-  if (process.env.VERCEL || process.env.NODE_ENV === "production") return false;
-  return true;
+  return false;
 }
 
 async function ensureAppReady() {
   if (!readyPromise) {
-    readyPromise = initializeApp();
+    readyPromise = initializeApp().catch((error) => {
+      readyPromise = null;
+      throw error;
+    });
   }
   return readyPromise;
 }
@@ -38,14 +38,27 @@ function assertDatabaseConfigured() {
   }
 }
 
+async function withTimeout(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} supero ${ms}ms`)), ms);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function initializeApp() {
   assertDatabaseConfigured();
 
-  await database.connectWithAutoSetup(sequelize);
+  const timeoutMs = Number(process.env.DB_INIT_TIMEOUT || 12000);
 
-  await sequelize.sync({ alter: shouldSyncAlter() });
-  await syncSessionStore();
-  await seedDatabase();
+  await withTimeout(database.connectWithAutoSetup(sequelize), timeoutMs, "Conexion MySQL");
+  await withTimeout(sequelize.sync({ alter: shouldSyncAlter() }), timeoutMs, "Sincronizacion de tablas");
+  await withTimeout(syncSessionStore(), timeoutMs, "Sesiones");
+  await withTimeout(seedDatabase(), timeoutMs, "Datos iniciales");
 }
 
 module.exports = { ensureAppReady, initializeApp };
