@@ -5,7 +5,16 @@ const Order = sequelize.define("Order", {
   status: {
     type: DataTypes.STRING,
     allowNull: false,
-    defaultValue: "paid",
+    defaultValue: "pending",
+  },
+  paymentProvider: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: "manual",
+  },
+  externalTransactionId: {
+    type: DataTypes.STRING,
+    allowNull: true,
   },
   totalAmount: {
     type: DataTypes.DECIMAL(10, 2),

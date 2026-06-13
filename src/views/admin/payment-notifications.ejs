@@ -1,0 +1,72 @@
+<%- include("../partials/head", { title }) %>
+<%- include("../partials/nav") %>
+<main class="orders-shell admin-payment-notifications-page">
+  <div class="admin-toolbar">
+    <h2>Pagos recibidos</h2>
+    <a class="ghost-btn admin-add-btn" href="/admin/payments">Configurar pasarelas</a>
+  </div>
+
+  <%- include("../partials/admin-nav", { adminSection: "payment-notifications" }) %>
+
+  <section class="admin-payment-summary-grid">
+    <article class="order-card admin-summary-card">
+      <p class="helper-text">Total cobrado</p>
+      <strong>$<%= Number(summary.totalCollected).toLocaleString("es-CO") %></strong>
+    </article>
+    <article class="order-card admin-summary-card admin-summary-card--success">
+      <p class="helper-text">Pagos exitosos</p>
+      <strong><%= summary.successCount %></strong>
+    </article>
+    <article class="order-card admin-summary-card admin-summary-card--failed">
+      <p class="helper-text">Pagos fallidos</p>
+      <strong><%= summary.failedCount %></strong>
+    </article>
+    <article class="order-card admin-summary-card admin-summary-card--pending">
+      <p class="helper-text">Pagos pendientes</p>
+      <strong><%= summary.pendingCount %></strong>
+    </article>
+  </section>
+
+  <form method="GET" action="/admin/payment-notifications" class="admin-orders-filters stack-form">
+    <label>
+      Filtrar por estado
+      <select name="status" onchange="this.form.submit()">
+        <option value="" <%= !statusFilter ? "selected" : "" %>>Todos</option>
+        <option value="success" <%= statusFilter === "success" ? "selected" : "" %>>Exitosos</option>
+        <option value="failed" <%= statusFilter === "failed" ? "selected" : "" %>>Fallidos</option>
+        <option value="pending" <%= statusFilter === "pending" ? "selected" : "" %>>Pendientes</option>
+      </select>
+    </label>
+  </form>
+
+  <% if (!notifications.length) { %>
+  <p class="empty">Aun no hay notificaciones de pago<%= statusFilter ? " con ese filtro" : "" %>.</p>
+  <% } %>
+
+  <% notifications.forEach((item) => { %>
+  <article class="order-card admin-payment-notification admin-payment-notification--<%= item.status %>">
+    <header class="admin-order-head">
+      <div>
+        <h3><%= item.statusLabel %></h3>
+        <p class="helper-text"><%= item.createdAtFormatted %></p>
+      </div>
+      <span class="admin-order-status admin-order-status--<%= item.status === "success" ? "paid" : item.status %>">
+        <%= item.statusLabel %>
+      </span>
+    </header>
+
+    <p><strong>Monto:</strong> $<%= Number(item.amount).toLocaleString("es-CO") %> <%= item.currency %></p>
+    <p><strong>Metodo:</strong> <%= item.methodLabel %> (<%= item.paymentProvider %>)</p>
+    <p><strong>Cliente:</strong> <%= item.customerName %> — <%= item.customerEmail %></p>
+    <% if (item.orderId) { %>
+    <p><strong>Pedido:</strong> #<%= item.orderId %></p>
+    <% } %>
+    <p><strong>Referencia:</strong> <%= item.paymentReference %></p>
+    <% if (item.externalTransactionId) { %>
+    <p><strong>ID transaccion:</strong> <%= item.externalTransactionId %></p>
+    <% } %>
+    <p><strong>Detalle:</strong> <%= item.message %></p>
+  </article>
+  <% }) %>
+</main>
+<%- include("../partials/footer") %>

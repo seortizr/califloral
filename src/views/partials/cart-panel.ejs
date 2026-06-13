@@ -101,6 +101,9 @@
 
     <label>
       Metodo de pago
+      <% if (paymentConfig && paymentConfig.activeProvider === 'wompi') { %>
+      <small class="helper-text">Pagos en linea procesados por Wompi.</small>
+      <% } %>
       <select name="paymentMethod" required>
         <option value="">Selecciona una opcion</option>
         <% (typeof paymentOptions !== "undefined" ? paymentOptions : []).forEach((method) => { %>

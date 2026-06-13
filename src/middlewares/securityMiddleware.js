@@ -69,9 +69,20 @@ function configureSessionSecurity(app) {
     })
   );
 
-  app.use(csrf());
+  const csrfProtection = csrf();
+  app.use((req, res, next) => {
+    if (req.originalUrl.startsWith("/payments/wompi/webhook")) {
+      return next();
+    }
+    return csrfProtection(req, res, next);
+  });
 
   app.use((req, res, next) => {
+    if (req.originalUrl.startsWith("/payments/wompi/webhook")) {
+      res.locals.csrfToken = "";
+      res.locals.currentUser = req.session?.user || null;
+      return next();
+    }
     try {
       res.locals.csrfToken = req.csrfToken();
     } catch {

@@ -1,0 +1,157 @@
+<%- include("../partials/head", { title }) %>
+<%- include("../partials/nav") %>
+<main class="orders-shell admin-payments-page">
+  <div class="admin-toolbar">
+    <h2>Pasarelas de pago</h2>
+    <p class="helper-text">Conecta Wompi, cambia la pasarela activa o usa pagos manuales.</p>
+  </div>
+
+  <%- include("../partials/admin-nav", { adminSection: "payments" }) %>
+
+  <% if (error) { %><p class="alert error"><%= error %></p><% } %>
+  <% if (message) { %><p class="alert success"><%= message %></p><% } %>
+
+  <section class="order-card admin-payment-status">
+    <h3>Estado actual</h3>
+    <p>Pasarela activa: <strong><%= config.providerLabel %></strong></p>
+    <p>Wompi: <strong><%= config.wompiActive ? "Conectado y activo" : (config.wompiConfigured ? "Configurado (no activo)" : "Sin configurar") %></strong></p>
+    <p>Pagos manuales: <strong><%= config.manualActive ? "Activos" : "Inactivos" %></strong></p>
+  </section>
+
+  <section class="order-card admin-payment-summary-grid">
+    <article class="admin-summary-card">
+      <p class="helper-text">Total cobrado</p>
+      <strong>$<%= Number(summary.totalCollected).toLocaleString("es-CO") %></strong>
+    </article>
+    <article class="admin-summary-card">
+      <p class="helper-text">Exitosos</p>
+      <strong><%= summary.successCount %></strong>
+    </article>
+    <article class="admin-summary-card">
+      <p class="helper-text">Fallidos</p>
+      <strong><%= summary.failedCount %></strong>
+    </article>
+    <article class="admin-summary-card">
+      <p class="helper-text">Pendientes</p>
+      <strong><%= summary.pendingCount %></strong>
+    </article>
+  </section>
+
+  <section class="order-card">
+    <div class="admin-featured-head">
+      <h3>Ultimos pagos</h3>
+      <a class="ghost-btn admin-add-btn" href="/admin/payment-notifications">Ver todos</a>
+    </div>
+
+    <% if (!recentNotifications.length) { %>
+    <p class="empty">Sin movimientos de pago todavia.</p>
+    <% } %>
+
+    <% recentNotifications.forEach((item) => { %>
+    <article class="admin-payment-notification-row admin-payment-notification--<%= item.status %>">
+      <div>
+        <strong><%= item.statusLabel %></strong>
+        <span class="helper-text"><%= item.createdAtFormatted %></span>
+      </div>
+      <div>
+        <span>$<%= Number(item.amount).toLocaleString("es-CO") %></span>
+        <span class="helper-text"><%= item.methodLabel %></span>
+      </div>
+      <p class="helper-text"><%= item.message %></p>
+    </article>
+    <% }) %>
+  </section>
+
+  <form method="POST" action="/admin/payments" class="stack-form order-card">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+
+    <label>
+      Pasarela activa en la tienda
+      <select name="activeProvider" required>
+        <% providers.forEach((provider) => { %>
+        <option value="<%= provider.key %>" <%= config.activeProvider === provider.key ? "selected" : "" %>>
+          <%= provider.label %>
+        </option>
+        <% }) %>
+      </select>
+    </label>
+
+    <fieldset class="fulfillment-fieldset">
+      <legend class="fulfillment-legend">Pagos manuales</legend>
+      <label class="admin-inline-check">
+        <input type="checkbox" name="manualTransferEnabled" <%= config.manualTransferEnabled ? "checked" : "" %> />
+        Transferencia bancaria
+      </label>
+      <label class="admin-inline-check">
+        <input type="checkbox" name="manualCodEnabled" <%= config.manualCodEnabled ? "checked" : "" %> />
+        Contraentrega
+      </label>
+    </fieldset>
+
+    <fieldset class="fulfillment-fieldset admin-wompi-block">
+      <legend class="fulfillment-legend">Wompi (tarjeta, Nequi, PSE, Daviplata)</legend>
+
+      <label>
+        Ambiente
+        <select name="wompiEnvironment">
+          <option value="sandbox" <%= config.wompiEnvironment === "sandbox" ? "selected" : "" %>>Sandbox (pruebas)</option>
+          <option value="production" <%= config.wompiEnvironment === "production" ? "selected" : "" %>>Produccion</option>
+        </select>
+      </label>
+
+      <label>
+        Llave publica
+        <input type="text" name="wompiPublicKey" value="<%= config.wompiPublicKey || "" %>" placeholder="pub_test_..." />
+      </label>
+
+      <label>
+        Llave privada
+        <input type="password" name="wompiPrivateKey" value="" placeholder="<%= config.wompiPrivateKeyMasked || "prv_test_..." %>" autocomplete="new-password" />
+        <small class="helper-text">Deja vacio para conservar la llave guardada.</small>
+      </label>
+
+      <label>
+        Secreto de integridad
+        <input type="password" name="wompiIntegritySecret" value="" placeholder="<%= config.wompiIntegritySecretMasked || "test_integrity_..." %>" autocomplete="new-password" />
+      </label>
+
+      <label>
+        Secreto de eventos (webhook)
+        <input type="password" name="wompiEventsSecret" value="" placeholder="<%= config.wompiEventsSecretMasked || "test_events_..." %>" autocomplete="new-password" />
+      </label>
+
+      <p class="helper-text">
+        Webhook en Wompi:
+        <strong><%= appUrl %>/payments/wompi/webhook</strong>
+      </p>
+    </fieldset>
+
+    <div class="admin-toolbar-actions">
+      <button class="primary-btn" type="submit">Guardar configuracion</button>
+      <button class="ghost-btn" type="submit" formaction="/admin/payments/test-wompi">Probar conexion Wompi</button>
+    </div>
+  </form>
+
+  <section class="order-card admin-payment-actions">
+    <h3>Conectar / desconectar</h3>
+    <div class="admin-toolbar-actions">
+      <form method="POST" action="/admin/payments">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="hidden" name="activeProvider" value="wompi" />
+        <button class="primary-btn" type="submit">Activar Wompi</button>
+      </form>
+
+      <form method="POST" action="/admin/payments">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="hidden" name="activeProvider" value="manual" />
+        <button class="ghost-btn" type="submit">Usar pagos manuales</button>
+      </form>
+
+      <form method="POST" action="/admin/payments/disconnect/wompi">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <button class="ghost-btn admin-delete-btn" type="submit">Desconectar Wompi</button>
+      </form>
+    </div>
+  </section>
+</main>
+<%- include("../partials/footer") %>

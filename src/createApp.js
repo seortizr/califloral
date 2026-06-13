@@ -10,6 +10,8 @@ const { paymentLocalsMiddleware } = require("./middlewares/paymentLocalsMiddlewa
 const shopRoutes = require("./routes/shopRoutes");
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+const paymentController = require("./controllers/paymentController");
 const { ensureAppReady } = require("./initializeApp");
 
 function createApp() {
@@ -41,6 +43,21 @@ function createApp() {
     }
   });
 
+  app.post(
+    "/payments/wompi/webhook",
+    express.raw({ type: "application/json" }),
+    (req, _res, next) => {
+      req.rawBody = req.body?.length ? req.body.toString("utf8") : "";
+      try {
+        req.body = req.rawBody ? JSON.parse(req.rawBody) : {};
+      } catch {
+        req.body = {};
+      }
+      next();
+    },
+    paymentController.wompiWebhook
+  );
+
   configureSessionSecurity(app);
 
   app.use(catalogLocalsMiddleware);
@@ -50,6 +67,7 @@ function createApp() {
   app.use("/", shopRoutes);
   app.use("/auth", authRoutes);
   app.use("/admin", adminRoutes);
+  app.use("/payments", paymentRoutes);
 
   app.use((req, res) => {
     res.status(404).send("Pagina no encontrada.");

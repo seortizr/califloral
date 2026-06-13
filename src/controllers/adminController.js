@@ -7,9 +7,24 @@ const { loadSitePages } = require("../services/siteContentService");
 const { paymentMethodLabel } = require("../services/paymentService");
 const { zoneLabel } = require("../services/shippingService");
 const { buildOrderMapInfo } = require("../services/mapsService");
+const {
+  PROVIDERS,
+  getPaymentConfig,
+  savePaymentConfig,
+  disconnectProvider,
+  buildAdminView,
+} = require("../services/paymentConfigService");
+const { testWompiConnection } = require("../services/wompiService");
+const { getAppBaseUrl } = require("./paymentController");
+const {
+  getAdminPaymentNotifications,
+  getPaymentSummary,
+} = require("../services/paymentNotificationService");
 
 const ORDER_STATUS_LABELS = {
+  pending: "Pendiente",
   paid: "Pagado",
+  failed: "Fallido",
   preparing: "En preparacion",
   shipped: "En camino",
   completed: "Entregado",
@@ -245,6 +260,72 @@ async function ordersDashboard(req, res) {
   });
 }
 
+async function paymentsDashboard(req, res) {
+  const config = buildAdminView(await getPaymentConfig(true));
+  const summary = await getPaymentSummary();
+  const recentNotifications = await getAdminPaymentNotifications({ statusFilter: "" });
+  return res.render("admin/payments", {
+    title: "Admin | Pasarelas de pago",
+    config,
+    providers: Object.values(PROVIDERS),
+    appUrl: getAppBaseUrl(req),
+    summary,
+    recentNotifications: recentNotifications.slice(0, 8),
+    message: req.query.message || null,
+    error: req.query.error || null,
+    navSection: "",
+    adminSection: "payments",
+  });
+}
+
+async function paymentNotificationsDashboard(req, res) {
+  const statusFilter = String(req.query.status || "").toLowerCase();
+  const notifications = await getAdminPaymentNotifications({ statusFilter });
+  const summary = await getPaymentSummary();
+
+  return res.render("admin/payment-notifications", {
+    title: "Admin | Notificaciones de pago",
+    notifications,
+    summary,
+    statusFilter: ["success", "failed", "pending"].includes(statusFilter) ? statusFilter : "",
+    navSection: "",
+    adminSection: "payment-notifications",
+  });
+}
+
+async function savePaymentSettings(req, res) {
+  try {
+    await savePaymentConfig(req.body);
+    return res.redirect("/admin/payments?message=Configuracion+guardada");
+  } catch (error) {
+    return res.redirect(`/admin/payments?error=${encodeURIComponent(error.message || "No se pudo guardar")}`);
+  }
+}
+
+async function testWompiSettings(req, res) {
+  try {
+    if (req.body?.wompiPublicKey) {
+      await savePaymentConfig(req.body);
+    }
+    const result = await testWompiConnection();
+    return res.redirect(
+      `/admin/payments?message=${encodeURIComponent(`Wompi conectado: ${result.merchantName} (${result.environment})`)}`
+    );
+  } catch (error) {
+    return res.redirect(`/admin/payments?error=${encodeURIComponent(error.message || "Fallo la prueba")}`);
+  }
+}
+
+async function disconnectPaymentGateway(req, res) {
+  try {
+    const provider = String(req.params.provider || "").toLowerCase();
+    await disconnectProvider(provider);
+    return res.redirect(`/admin/payments?message=${encodeURIComponent("Pasarela desconectada")}`);
+  } catch (error) {
+    return res.redirect(`/admin/payments?error=${encodeURIComponent(error.message || "No se pudo desconectar")}`);
+  }
+}
+
 async function createProduct(req, res) {
   try {
     const { name, description, price, imageUrl, imageEmoji, categoryId } = req.body;
@@ -342,6 +423,11 @@ module.exports = {
   handleUploadError,
   productDashboard,
   ordersDashboard,
+  paymentsDashboard,
+  paymentNotificationsDashboard,
+  savePaymentSettings,
+  testWompiSettings,
+  disconnectPaymentGateway,
   createProduct,
   updateProduct,
   toggleProduct,

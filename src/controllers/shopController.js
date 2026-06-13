@@ -1,4 +1,4 @@
-const { Cart, CartItem, Product, Order, OrderItem, Category } = require("../models");
+const { Cart, CartItem, Product, Order, OrderItem, Category, User } = require("../models");
 const { loadSitePages, mapEmbedSrc } = require("../services/siteContentService");
 const {
   getUserCart,
@@ -15,7 +15,19 @@ const {
 const {
   normalizePaymentMethod,
   paymentMethodLabel,
+  isOnlinePaymentMethod,
+  isManualPaymentMethod,
+  resolveOrderStatus,
 } = require("../services/paymentService");
+const {
+  getPaymentConfig,
+  isWompiActive,
+  isManualActive,
+  isCheckoutEnabled,
+} = require("../services/paymentConfigService");
+const { createWompiPaymentLink } = require("../services/wompiService");
+const { getAppBaseUrl, applyOrderPaymentUpdate } = require("./paymentController");
+const { recordPaymentNotification, buildNotificationMessage } = require("../services/paymentNotificationService");
 
 async function getFeaturedProducts() {
   let list = await Product.findAll({
@@ -181,9 +193,22 @@ async function checkout(req, res) {
   req.session.cartShippingPrefs = { fulfillment, zone };
 
   const cartData = await buildCartViewModel(req.session.userId, req.session);
+  const paymentConfig = await getPaymentConfig();
 
   if (!cartData.cartItems.length) {
     return res.redirect("/");
+  }
+
+  if (!isCheckoutEnabled(paymentConfig)) {
+    const featuredProducts = await getFeaturedProducts();
+    return res.status(400).render("shop/home", {
+      title: "CaliFloral",
+      featuredProducts,
+      cartData,
+      error: "Los pagos en linea estan desactivados. Contacta a la tienda.",
+      message: null,
+      navSection: "home",
+    });
   }
 
   if (!paymentMethod) {
@@ -193,6 +218,29 @@ async function checkout(req, res) {
       featuredProducts,
       cartData,
       error: "Selecciona un metodo de pago.",
+      message: null,
+      navSection: "home",
+    });
+  }
+
+  const wompiActive = isWompiActive(paymentConfig);
+  const manualActive = isManualActive(paymentConfig);
+  const onlineMethod = isOnlinePaymentMethod(paymentMethod);
+  let paymentProvider = "manual";
+
+  if (onlineMethod && wompiActive) {
+    paymentProvider = "wompi";
+  } else if (onlineMethod && manualActive) {
+    paymentProvider = "manual";
+  } else if (isManualPaymentMethod(paymentMethod) && manualActive) {
+    paymentProvider = "manual";
+  } else {
+    const featuredProducts = await getFeaturedProducts();
+    return res.status(400).render("shop/home", {
+      title: "CaliFloral",
+      featuredProducts,
+      cartData,
+      error: "Ese metodo de pago no esta disponible con la pasarela activa.",
       message: null,
       navSection: "home",
     });
@@ -226,13 +274,16 @@ async function checkout(req, res) {
   const totalNum = subtotalNum > 0 ? subtotalNum + shippingAmt : 0;
 
   const paymentReference = `CF-${paymentMethod.toUpperCase()}-${Date.now()}`;
+  const orderStatus = resolveOrderStatus(paymentMethod, paymentProvider);
+
   const order = await Order.create({
     UserId: req.session.userId,
     totalAmount: money(totalNum),
     shippingAddress,
     paymentMethod,
     paymentReference,
-    status: "paid",
+    paymentProvider,
+    status: orderStatus,
     fulfillmentType: fulfillment,
     deliveryZone: fulfillment === "pickup" ? null : zone,
     shippingAmount: money(shippingAmt),
@@ -248,15 +299,78 @@ async function checkout(req, res) {
     });
   }
 
+  if (paymentProvider === "wompi") {
+    const user = await User.findByPk(req.session.userId);
+    const amountInCents = Math.max(1, Math.round(totalNum * 100));
+    const redirectUrl = `${getAppBaseUrl(req)}/payments/wompi/return?order=${order.id}`;
+
+    try {
+      const wompiLink = await createWompiPaymentLink({
+        reference: paymentReference,
+        amountInCents,
+        customerEmail: user?.email || "cliente@califloral.com",
+        redirectUrl,
+        description: `Pedido CaliFloral #${order.id}`,
+      });
+
+      order.externalTransactionId = wompiLink.paymentLinkId || null;
+      await order.save();
+
+      await recordPaymentNotification({
+        order,
+        status: "pending",
+        rawStatus: "PENDING",
+        externalTransactionId: wompiLink.paymentLinkId,
+        message: `Pago iniciado en Wompi por $${Number(order.totalAmount).toLocaleString("es-CO")}.`,
+      });
+
+      await CartItem.destroy({ where: { CartId: cartData.cart.id } });
+
+      return res.redirect(wompiLink.checkoutUrl);
+    } catch (error) {
+      await applyOrderPaymentUpdate(order, {
+        orderStatus: "failed",
+        rawStatus: "ERROR",
+        source: "checkout",
+      });
+      const featuredProducts = await getFeaturedProducts();
+      const refreshedCart = await buildCartViewModel(req.session.userId, req.session);
+      return res.status(502).render("shop/home", {
+        title: "CaliFloral",
+        featuredProducts,
+        cartData: refreshedCart,
+        error: `No se pudo iniciar el pago con Wompi: ${error.message}`,
+        message: null,
+        navSection: "home",
+      });
+    }
+  }
+
   await CartItem.destroy({ where: { CartId: cartData.cart.id } });
+
+  await recordPaymentNotification({
+    order,
+    status: orderStatus === "paid" ? "success" : "pending",
+    rawStatus: orderStatus.toUpperCase(),
+    message: buildNotificationMessage(
+      orderStatus === "paid" ? "success" : "pending",
+      paymentMethod,
+      order.totalAmount
+    ),
+  });
 
   const featuredProducts = await getFeaturedProducts();
   const refreshedCart = await buildCartViewModel(req.session.userId, req.session);
+  const successMessage =
+    orderStatus === "paid"
+      ? `Pago aprobado. Referencia: ${paymentReference}`
+      : `Pedido registrado. Referencia: ${paymentReference}. Te contactaremos para confirmar el pago.`;
+
   return res.render("shop/home", {
     title: "CaliFloral",
     featuredProducts,
     cartData: refreshedCart,
-    message: `Pago aprobado. Referencia: ${paymentReference}`,
+    message: successMessage,
     error: null,
     navSection: "home",
   });

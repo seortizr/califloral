@@ -1004,6 +1004,83 @@ select:focus {
   padding-left: 1.1rem;
 }
 
+.admin-payments-page,
+.admin-payment-notifications-page {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.admin-payment-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.65rem;
+}
+
+.admin-summary-card {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.admin-summary-card strong {
+  font-size: 1.35rem;
+  color: #4a1035;
+}
+
+.admin-summary-card--success strong {
+  color: #1f6b3f;
+}
+
+.admin-summary-card--failed strong {
+  color: #9b2c2c;
+}
+
+.admin-summary-card--pending strong {
+  color: #8a5a00;
+}
+
+.admin-payment-notification {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.admin-payment-notification--success {
+  border-left: 4px solid #1f6b3f;
+}
+
+.admin-payment-notification--failed {
+  border-left: 4px solid #9b2c2c;
+}
+
+.admin-payment-notification--pending {
+  border-left: 4px solid #c58d00;
+}
+
+.admin-payment-notification-row {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid #f1e7f0;
+}
+
+.admin-payment-notification-row:first-of-type {
+  border-top: 0;
+}
+
+.admin-wompi-block {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.admin-payment-actions .admin-toolbar-actions {
+  flex-wrap: wrap;
+}
+
+.admin-order-status--failed,
+.admin-order-status--pending {
+  background: #fff7e8;
+  color: #8a5a00;
+}
+
 @media (max-width: 940px) {
   .main-nav {
     grid-template-columns: 1fr;

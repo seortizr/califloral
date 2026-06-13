@@ -1,5 +1,5 @@
 const bcrypt = require("bcryptjs");
-const { Product, User, Cart, Category } = require("../models");
+const { Product, User, Cart, Category, PaymentConfig } = require("../models");
 
 const CATEGORY_DEFS = [
   { name: "Ramos", slug: "ramos", iconClass: "fa-regular fa-hand-holding-heart", sortOrder: 1 },
@@ -126,12 +126,20 @@ async function seedAdminUser() {
   }
 }
 
+async function seedPaymentConfig() {
+  const existing = await PaymentConfig.findOne();
+  if (!existing) {
+    await PaymentConfig.create({});
+  }
+}
+
 async function seedDatabase() {
   await ensureCategories();
   await seedDemoProductsIfEmpty();
   await syncProductCategoriesFromExisting();
   await ensureFeaturedProducts();
   await seedAdminUser();
+  await seedPaymentConfig();
 }
 
 module.exports = { seedDatabase };
